@@ -1,0 +1,1348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MicroCraft 3D</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+  body, html { width: 100%; height: 100%; overflow: hidden; background: #000; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+  #canvas { width: 100%; height: 100%; display: block; }
+  
+  #crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  #crosshair::before, #crosshair::after {
+    content: '';
+    position: absolute;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 0 2px #000;
+  }
+  #crosshair::before { top: 6px; left: 0; width: 14px; height: 2px; }
+  #crosshair::after { top: 0; left: 6px; width: 2px; height: 14px; }
+
+  #ui-overlay {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    color: #fff;
+    text-shadow: 2px 2px 0 #000, -1px -1px 0 #000;
+    font-size: 14px;
+    line-height: 1.6;
+    pointer-events: none;
+  }
+  #ui-overlay h1 { font-size: 22px; font-weight: bold; margin-bottom: 4px; color: #55ff55; text-shadow: 2px 2px 0 #003300; }
+  .badge { background: rgba(0,0,0,0.6); border: 2px solid #555; padding: 4px 10px; border-radius: 4px; display: inline-block; margin-top: 6px; }
+
+  #hotbar {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.65);
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid #666;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  }
+  .slot {
+    width: 50px;
+    height: 50px;
+    border: 3px solid #444;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 11px;
+    color: #fff;
+    text-shadow: 1px 1px 2px #000;
+    cursor: pointer;
+    transition: transform 0.1s, border-color 0.1s;
+    position: relative;
+  }
+  .slot.active {
+    border-color: #ffff55;
+    transform: scale(1.12);
+    box-shadow: 0 0 10px #ffff55;
+  }
+  .slot-key {
+    position: absolute;
+    top: 2px;
+    left: 4px;
+    font-size: 9px;
+    color: #aaa;
+  }
+  .slot-preview {
+    width: 20px;
+    height: 20px;
+    margin-bottom: 2px;
+    border: 1px solid rgba(0,0,0,0.4);
+  }
+
+  #blocker {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.65);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #fff;
+    cursor: pointer;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+  }
+  #blocker h2 { font-size: 40px; margin-bottom: 12px; color: #55ff55; text-shadow: 3px 3px 0 #003300; }
+  #blocker p { font-size: 16px; margin: 4px 0; color: #ddd; }
+  .btn-start {
+    margin-top: 20px;
+    background: #2e8b57;
+    border: 2px solid #fff;
+    color: #fff;
+    padding: 12px 28px;
+    font-size: 18px;
+    font-weight: bold;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+</style>
+<!-- Load Three.js from unpkg/cdnjs -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+<div id="blocker">
+  <h2>MICROCRAFT</h2>
+  <p>Click anywhere to Play</p>
+  <p><b>WASD</b> to Move | <b>SPACE</b> to Jump | <b>SHIFT</b> to Sneak</p>
+  <p><b>Left Click</b>: Break Block | <b>Right Click</b>: Place Block</p>
+  <p><b>1-5 / Scroll</b>: Select Block</p>
+  <p style="color: #ffaa55; margin-top: 6px;">🐐 <b>Beware: Roaming NPC Goats Spit Fire!</b></p>
+  <button class="btn-start">CLICK TO START</button>
+</div>
+
+<div id="crosshair"></div>
+
+<div id="damage-flash" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background:rgba(255,0,0,0);transition:background 0.15s;z-index:90;"></div>
+
+<div id="ui-overlay">
+  <h1>MicroCraft 3D</h1>
+  <div>Status: <span id="pos-info">X: 0, Y: 0, Z: 0</span></div>
+  <div class="badge">Blocks left in chunk: <span id="block-count">0</span></div>
+  <div class="badge" style="background: rgba(180, 50, 20, 0.7); border-color: #ff6622; color: #ffdd88;">🔥 Fire Goats: <span id="goat-count">0</span></div>
+  <div id="health-bar" style="margin-top: 6px; font-size: 16px; text-shadow: 2px 2px 2px #000;">HP: <span id="hp-hearts">❤️❤️❤️❤️❤️</span></div>
+</div>
+
+<div id="hotbar">
+  <div class="slot active" data-id="1">
+    <span class="slot-key">1</span>
+    <div class="slot-preview" style="background:#5b8c32;"></div>
+    <span>Grass</span>
+  </div>
+  <div class="slot" data-id="2">
+    <span class="slot-key">2</span>
+    <div class="slot-preview" style="background:#866043;"></div>
+    <span>Dirt</span>
+  </div>
+  <div class="slot" data-id="3">
+    <span class="slot-key">3</span>
+    <div class="slot-preview" style="background:#808080;"></div>
+    <span>Stone</span>
+  </div>
+  <div class="slot" data-id="4">
+    <span class="slot-key">4</span>
+    <div class="slot-preview" style="background:#a07040;"></div>
+    <span>Wood</span>
+  </div>
+  <div class="slot" data-id="5">
+    <span class="slot-key">5</span>
+    <div class="slot-preview" style="background:#3d6e24;"></div>
+    <span>Leaves</span>
+  </div>
+</div>
+
+<canvas id="canvas"></canvas>
+
+<script>
+// --- BLOCK DEFINITIONS & TEXTURE GENERATION ---
+const BLOCK_TYPES = {
+  GRASS: 1,
+  DIRT: 2,
+  STONE: 3,
+  WOOD: 4,
+  LEAVES: 5
+};
+
+function createBlockTexture(type, side) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 16;
+  canvas.height = 16;
+  const ctx = canvas.getContext('2d');
+
+  let baseColor, noiseColor, altNoise;
+  if (type === BLOCK_TYPES.GRASS) {
+    if (side === 'top') {
+      baseColor = '#5c9634'; noiseColor = '#4a7d28'; altNoise = '#6ba83d';
+    } else if (side === 'bottom') {
+      baseColor = '#866043'; noiseColor = '#6c4a30'; altNoise = '#5a3d26';
+    } else {
+      // Side: dirt with grass top rim
+      ctx.fillStyle = '#866043';
+      ctx.fillRect(0, 0, 16, 16);
+      ctx.fillStyle = '#5c9634';
+      ctx.fillRect(0, 0, 16, 4);
+      for (let i = 0; i < 16; i += 2) {
+        if (Math.random() > 0.4) ctx.fillRect(i, 4, 2, 2);
+      }
+      return new THREE.CanvasTexture(canvas);
+    }
+  } else if (type === BLOCK_TYPES.DIRT) {
+    baseColor = '#866043'; noiseColor = '#6c4a30'; altNoise = '#9c7353';
+  } else if (type === BLOCK_TYPES.STONE) {
+    baseColor = '#828282'; noiseColor = '#686868'; altNoise = '#9a9a9a';
+  } else if (type === BLOCK_TYPES.WOOD) {
+    if (side === 'top' || side === 'bottom') {
+      baseColor = '#b58a5b'; noiseColor = '#8b5e34'; altNoise = '#6d4520';
+    } else {
+      baseColor = '#6d4827'; noiseColor = '#533418'; altNoise = '#40260f';
+    }
+  } else if (type === BLOCK_TYPES.LEAVES) {
+    baseColor = '#38781e'; noiseColor = '#2d6316'; altNoise = '#469127';
+  }
+
+  ctx.fillStyle = baseColor;
+  ctx.fillRect(0, 0, 16, 16);
+
+  // Noise detail
+  for (let x = 0; x < 16; x++) {
+    for (let y = 0; y < 16; y++) {
+      const r = Math.random();
+      if (r > 0.75) {
+        ctx.fillStyle = noiseColor;
+        ctx.fillRect(x, y, 1, 1);
+      } else if (r > 0.6) {
+        ctx.fillStyle = altNoise;
+        ctx.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  return texture;
+}
+
+// Materials cache
+const materials = {};
+function getMaterials(type) {
+  if (materials[type]) return materials[type];
+  if (type === BLOCK_TYPES.GRASS) {
+    const top = new THREE.MeshLambertMaterial({ map: createBlockTexture(type, 'top') });
+    const bottom = new THREE.MeshLambertMaterial({ map: createBlockTexture(type, 'bottom') });
+    const side = new THREE.MeshLambertMaterial({ map: createBlockTexture(type, 'side') });
+    materials[type] = [side, side, top, bottom, side, side];
+  } else if (type === BLOCK_TYPES.WOOD) {
+    const side = new THREE.MeshLambertMaterial({ map: createBlockTexture(type, 'side') });
+    const cap = new THREE.MeshLambertMaterial({ map: createBlockTexture(type, 'top') });
+    materials[type] = [side, side, cap, cap, side, side];
+  } else {
+    const mat = new THREE.MeshLambertMaterial({ map: createBlockTexture(type, 'side') });
+    materials[type] = [mat, mat, mat, mat, mat, mat];
+  }
+  return materials[type];
+}
+
+// --- WORLD INITIALIZATION ---
+const WORLD_W = 28;
+const WORLD_D = 28;
+const WORLD_H = 16;
+const world = new Map(); // "x,y,z" -> { type, mesh }
+
+function key(x, y, z) { return `${x},${y},${z}`; }
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x78a7ff);
+scene.fog = new THREE.FogExp2(0x78a7ff, 0.035);
+
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+// Lighting
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
+scene.add(ambientLight);
+
+const sunLight = new THREE.DirectionalLight(0xffffff, 0.75);
+sunLight.position.set(20, 40, 15);
+scene.add(sunLight);
+
+// Shared box geometry
+const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+
+// Helper to set blocks
+function addBlock(x, y, z, type) {
+  const k = key(x, y, z);
+  if (world.has(k)) return;
+
+  const mesh = new THREE.Mesh(boxGeo, getMaterials(type));
+  mesh.position.set(x + 0.5, y + 0.5, z + 0.5);
+  scene.add(mesh);
+  world.set(k, { type, mesh });
+}
+
+function removeBlock(x, y, z) {
+  const k = key(x, y, z);
+  const val = world.get(k);
+  if (val) {
+    scene.remove(val.mesh);
+    world.delete(k);
+    return true;
+  }
+  return false;
+}
+
+// Simple Heightmap / Perlin-ish Generator
+function getTerrainHeight(x, z) {
+  const s1 = Math.sin(x * 0.18) * Math.cos(z * 0.18) * 2.2;
+  const s2 = Math.sin(x * 0.08 + 1.2) * Math.sin(z * 0.08 + 2.1) * 3.5;
+  return Math.floor(6 + s1 + s2);
+}
+
+// Generate Landscape
+const offset = Math.floor(WORLD_W / 2);
+for (let x = -offset; x < offset; x++) {
+  for (let z = -offset; z < offset; z++) {
+    const h = getTerrainHeight(x, z);
+    for (let y = 0; y <= h; y++) {
+      let bType = BLOCK_TYPES.STONE;
+      if (y === h) bType = BLOCK_TYPES.GRASS;
+      else if (y >= h - 2) bType = BLOCK_TYPES.DIRT;
+      addBlock(x, y, z, bType);
+    }
+
+    // Plant trees occasionally
+    if (x > -offset + 3 && x < offset - 3 && z > -offset + 3 && z < offset - 3) {
+      if (Math.sin(x * 12.3 + z * 37.7) > 0.88) {
+        const baseTreeY = h + 1;
+        // Trunk
+        for (let ty = 0; ty < 4; ty++) {
+          addBlock(x, baseTreeY + ty, z, BLOCK_TYPES.WOOD);
+        }
+        // Leaves
+        for (let lx = -2; lx <= 2; lx++) {
+          for (let lz = -2; lz <= 2; lz++) {
+            for (let ly = 2; ly <= 4; ly++) {
+              if (Math.abs(lx) === 2 && Math.abs(lz) === 2 && ly === 4) continue;
+              if (lx === 0 && lz === 0 && ly < 4) continue;
+              addBlock(x + lx, baseTreeY + ly, z + lz, BLOCK_TYPES.LEAVES);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+// Update block count counter
+document.getElementById('block-count').innerText = world.size;
+
+// Highlight selection wireframe
+const wireGeo = new THREE.BoxGeometry(1.002, 1.002, 1.002);
+const wireMat = new THREE.MeshBasicMaterial({ color: 0x000000, wireframe: true });
+const targetBox = new THREE.Mesh(wireGeo, wireMat);
+targetBox.visible = false;
+scene.add(targetBox);
+
+// --- SOUND SYNTHESIS (Web Audio API) ---
+let audioCtx = null;
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function playGoatBleat() {
+  if (!audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const vibrato = audioCtx.createOscillator();
+    const vibratoGain = audioCtx.createGain();
+
+    // Goat "Baaaa" sound: modulated pitch with fast vibrato
+    const now = audioCtx.currentTime;
+    const baseFreq = 220 + Math.random() * 60;
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.linearRampToValueAtTime(baseFreq * 0.85, now + 0.5);
+
+    // Fast wobble/vibrato for goat bleat
+    vibrato.frequency.setValueAtTime(14, now);
+    vibratoGain.gain.setValueAtTime(25, now);
+    vibrato.connect(osc.frequency);
+
+    gain.gain.setValueAtTime(0.01, now);
+    gain.gain.linearRampToValueAtTime(0.18, now + 0.08);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    vibrato.start(now);
+    osc.start(now);
+    vibrato.stop(now + 0.65);
+    osc.stop(now + 0.65);
+  } catch (e) {}
+}
+
+function playFireSpitSound() {
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    const bufferSize = audioCtx.sampleRate * 0.45;
+    const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufferSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.2));
+    }
+
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(800, now);
+    filter.frequency.linearRampToValueAtTime(250, now + 0.4);
+
+    const gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(0.3, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    noise.start(now);
+  } catch (e) {}
+}
+
+function playPlayerHurtSound() {
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(40, now + 0.25);
+    gain.gain.setValueAtTime(0.35, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  } catch (e) {}
+}
+
+// --- PLAYER PHYSICS & CONTROLS ---
+let playerHealth = 5;
+let playerInvulnTimer = 0;
+
+function updateHealthUI() {
+  const hearts = '❤️'.repeat(Math.max(0, playerHealth)) + '🖤'.repeat(Math.max(0, 5 - playerHealth));
+  const el = document.getElementById('hp-hearts');
+  if (el) el.innerText = hearts;
+}
+
+function hurtPlayer(amount, knockDir) {
+  if (playerInvulnTimer > 0) return;
+  playerHealth -= amount;
+  playerInvulnTimer = 0.8;
+  playPlayerHurtSound();
+  updateHealthUI();
+
+  // Screen flash
+  const flash = document.getElementById('damage-flash');
+  if (flash) {
+    flash.style.background = 'rgba(255, 40, 0, 0.45)';
+    setTimeout(() => { flash.style.background = 'rgba(255, 40, 0, 0)'; }, 180);
+  }
+
+  // Knockback
+  if (knockDir) {
+    player.vel.x += knockDir.x * 6;
+    player.vel.y = 5;
+    player.vel.z += knockDir.z * 6;
+  }
+
+  if (playerHealth <= 0) {
+    setTimeout(() => {
+      alert("🔥 The fire goats got you! Respawning...");
+      player.pos.set(0, 15, 0);
+      player.vel.set(0, 0, 0);
+      playerHealth = 5;
+      updateHealthUI();
+    }, 100);
+  }
+}
+
+const player = {
+  pos: new THREE.Vector3(0, 14, 0),
+  vel: new THREE.Vector3(0, 0, 0),
+  yaw: 0,
+  pitch: 0,
+  height: 1.7,
+  radius: 0.3,
+  onGround: false
+};
+
+const keys = {};
+let activeSlot = 1;
+
+window.addEventListener('keydown', (e) => {
+  keys[e.code] = true;
+  if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'].includes(e.code)) {
+    activeSlot = parseInt(e.code.replace('Digit', ''));
+    updateHotbar();
+  }
+});
+
+window.addEventListener('keyup', (e) => {
+  keys[e.code] = false;
+});
+
+// Hotbar selection
+const slots = document.querySelectorAll('.slot');
+function updateHotbar() {
+  slots.forEach(s => {
+    if (parseInt(s.dataset.id) === activeSlot) s.classList.add('active');
+    else s.classList.remove('active');
+  });
+}
+slots.forEach(s => {
+  s.addEventListener('click', () => {
+    activeSlot = parseInt(s.dataset.id);
+    updateHotbar();
+  });
+});
+window.addEventListener('wheel', (e) => {
+  if (e.deltaY > 0) activeSlot = (activeSlot % 5) + 1;
+  else activeSlot = ((activeSlot - 2 + 5) % 5) + 1;
+  updateHotbar();
+});
+
+// Pointer Lock & Controls (with Safari / WebKit support & fallback)
+const blocker = document.getElementById('blocker');
+const startBtn = document.querySelector('.btn-start');
+let isLocked = false;
+let prevMouseX = null;
+let prevMouseY = null;
+
+function getPointerLockElement() {
+  return document.pointerLockElement || document.webkitPointerLockElement || document.mozPointerLockElement;
+}
+
+function lockGame() {
+  initAudio();
+  isLocked = true;
+  blocker.style.display = 'none';
+
+  // Request pointer lock across standard and WebKit implementations
+  const req = canvas.requestPointerLock || canvas.webkitRequestPointerLock || canvas.mozRequestPointerLock;
+  if (req) {
+    try {
+      const p = req.call(canvas);
+      if (p && typeof p.catch === 'function') {
+        p.catch(err => {
+          // In Safari (especially local files), pointer lock may be restricted.
+          // Fallback camera controls keep the game fully playable!
+          console.warn('Pointer lock restricted or unavailable:', err);
+        });
+      }
+    } catch (e) {
+      console.warn('Pointer lock exception:', e);
+    }
+  }
+}
+
+function unlockGame() {
+  isLocked = false;
+  blocker.style.display = 'flex';
+  const h2 = blocker.querySelector('h2');
+  if (h2) h2.innerText = 'PAUSED';
+  if (startBtn) startBtn.innerText = 'CLICK TO RESUME';
+
+  const exitLock = document.exitPointerLock || document.webkitExitPointerLock || document.mozExitPointerLock;
+  if (exitLock && getPointerLockElement()) {
+    try {
+      exitLock.call(document);
+    } catch (e) {}
+  }
+}
+
+blocker.addEventListener('click', (e) => {
+  e.stopPropagation();
+  lockGame();
+});
+
+if (startBtn) {
+  startBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    lockGame();
+  });
+}
+
+// Support standard and WebKit pointerlockchange events
+['pointerlockchange', 'webkitpointerlockchange', 'mozpointerlockchange'].forEach(ev => {
+  document.addEventListener(ev, () => {
+    if (getPointerLockElement() === canvas) {
+      isLocked = true;
+      blocker.style.display = 'none';
+    } else {
+      if (isLocked && !getPointerLockElement()) {
+        unlockGame();
+      }
+    }
+  });
+});
+
+// If Safari fires pointer lock error, ensure player is not trapped behind the blocker
+['pointerlockerror', 'webkitpointerlockerror', 'mozpointerlockerror'].forEach(ev => {
+  document.addEventListener(ev, () => {
+    isLocked = true;
+    blocker.style.display = 'none';
+  });
+});
+
+// Escape key to pause
+window.addEventListener('keydown', (e) => {
+  if (e.code === 'Escape' && isLocked) {
+    unlockGame();
+  }
+});
+
+// Safari & standard mouse movement handling
+document.addEventListener('mousemove', (e) => {
+  if (!isLocked) {
+    prevMouseX = e.clientX;
+    prevMouseY = e.clientY;
+    return;
+  }
+
+  let mx = e.movementX;
+  let my = e.movementY;
+
+  // WebKit movement fallbacks
+  if (typeof mx !== 'number') mx = e.webkitMovementX;
+  if (typeof my !== 'number') my = e.webkitMovementY;
+
+  // Client coordinate fallback when pointer lock is not granted by Safari
+  if (typeof mx !== 'number' || isNaN(mx) || (mx === 0 && my === 0 && prevMouseX !== null)) {
+    if (prevMouseX !== null) mx = e.clientX - prevMouseX;
+  }
+  if (typeof my !== 'number' || isNaN(my)) {
+    if (prevMouseY !== null) my = e.clientY - prevMouseY;
+  }
+
+  prevMouseX = e.clientX;
+  prevMouseY = e.clientY;
+
+  if (typeof mx !== 'number' || isNaN(mx)) mx = 0;
+  if (typeof my !== 'number' || isNaN(my)) my = 0;
+
+  // Prevent large jumps on lock entry
+  if (Math.abs(mx) > 120) mx = 0;
+  if (Math.abs(my) > 120) my = 0;
+
+  const sens = 0.0022;
+  player.yaw -= mx * sens;
+  player.pitch -= my * sens;
+  player.pitch = Math.max(-Math.PI / 2 + 0.01, Math.min(Math.PI / 2 - 0.01, player.pitch));
+});
+
+// Collision Helper
+function isSolid(x, y, z) {
+  return world.has(key(Math.floor(x), Math.floor(y), Math.floor(z)));
+}
+
+function checkCollision(pos) {
+  const r = player.radius;
+  const minX = Math.floor(pos.x - r);
+  const maxX = Math.floor(pos.x + r);
+  const minY = Math.floor(pos.y - player.height);
+  const maxY = Math.floor(pos.y);
+  const minZ = Math.floor(pos.z - r);
+  const maxZ = Math.floor(pos.z + r);
+
+  for (let x = minX; x <= maxX; x++) {
+    for (let y = minY; y <= maxY; y++) {
+      for (let z = minZ; z <= maxZ; z++) {
+        if (world.has(key(x, y, z))) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+// Raycasting for block placement and mining
+const raycaster = new THREE.Raycaster();
+let lookAtTarget = null; // { blockPos, placePos }
+
+function updateRaycast() {
+  raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+  raycaster.far = 6;
+
+  const meshes = [];
+  world.forEach(v => meshes.push(v.mesh));
+  const intersects = raycaster.intersectObjects(meshes, false);
+
+  if (intersects.length > 0) {
+    const hit = intersects[0];
+    const bp = new THREE.Vector3().copy(hit.point).sub(hit.face.normal.clone().multiplyScalar(0.1)).floor();
+    const pp = new THREE.Vector3().copy(hit.point).add(hit.face.normal.clone().multiplyScalar(0.1)).floor();
+    lookAtTarget = { blockPos: bp, placePos: pp };
+
+    targetBox.position.set(bp.x + 0.5, bp.y + 0.5, bp.z + 0.5);
+    targetBox.visible = true;
+  } else {
+    lookAtTarget = null;
+    targetBox.visible = false;
+  }
+}
+
+// Mouse actions
+window.addEventListener('mousedown', (e) => {
+  if (!isLocked || !lookAtTarget) return;
+
+  if (e.button === 0) {
+    // Left click: Break block
+    if (removeBlock(lookAtTarget.blockPos.x, lookAtTarget.blockPos.y, lookAtTarget.blockPos.z)) {
+      document.getElementById('block-count').innerText = world.size;
+    }
+  } else if (e.button === 2) {
+    // Right click: Place block
+    const pp = lookAtTarget.placePos;
+    // Prevent placing inside player body
+    const pX = Math.floor(player.pos.x);
+    const pZ = Math.floor(player.pos.z);
+    const pY1 = Math.floor(player.pos.y);
+    const pY2 = Math.floor(player.pos.y - 1);
+    
+    if (!(pp.x === pX && pp.z === pZ && (pp.y === pY1 || pp.y === pY2))) {
+      addBlock(pp.x, pp.y, pp.z, activeSlot);
+      document.getElementById('block-count').innerText = world.size;
+    }
+  }
+});
+window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+// --- FIRE PARTICLES & PROJECTILES ---
+const fireballs = [];
+const particles = [];
+
+const fireGeo = new THREE.DodecahedronGeometry(0.24, 1);
+const fireMat = new THREE.MeshBasicMaterial({ color: 0xff3b00 });
+const particleGeo = new THREE.BoxGeometry(0.12, 0.12, 0.12);
+
+function spawnParticle(pos, vel, colorHex = 0xff5500, maxLife = 0.5, size = 0.14) {
+  const mat = new THREE.MeshBasicMaterial({ color: colorHex, transparent: true, opacity: 0.95 });
+  const mesh = new THREE.Mesh(particleGeo, mat);
+  mesh.position.copy(pos);
+  mesh.scale.setScalar(size / 0.12);
+  scene.add(mesh);
+  particles.push({ mesh, vel: vel.clone(), life: maxLife, maxLife, initialScale: size / 0.12 });
+}
+
+function spawnFireball(origin, targetDir) {
+  playFireSpitSound();
+  const mesh = new THREE.Mesh(fireGeo, fireMat);
+  mesh.position.copy(origin);
+  
+  const light = new THREE.PointLight(0xff6600, 1.8, 6);
+  mesh.add(light);
+  scene.add(mesh);
+
+  const speed = 14.5;
+  const vel = targetDir.clone().normalize().multiplyScalar(speed);
+  vel.y += 1.2; // Slight arc
+
+  fireballs.push({
+    mesh,
+    vel,
+    life: 4.5,
+    spawnEmbersTimer: 0
+  });
+}
+
+// --- NPC GOATS ---
+const goats = [];
+
+function createGoatModel() {
+  const goat = new THREE.Group();
+
+  const woolMat = new THREE.MeshLambertMaterial({ color: 0xeeece5 });
+  const darkMat = new THREE.MeshLambertMaterial({ color: 0x2e2520 });
+  const snoutMat = new THREE.MeshLambertMaterial({ color: 0xded8ce });
+  const hornMat = new THREE.MeshLambertMaterial({ color: 0x54473e });
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x181410 });
+  const mouthFireMat = new THREE.MeshBasicMaterial({ color: 0xff5500 });
+
+  // Body
+  const bodyMesh = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.75, 1.3), woolMat);
+  bodyMesh.position.set(0, 0.82, 0);
+  goat.add(bodyMesh);
+
+  // Head Group (pivot near neck)
+  const headGroup = new THREE.Group();
+  headGroup.position.set(0, 1.18, 0.6);
+
+  // Skull
+  const skull = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.46, 0.55), woolMat);
+  skull.position.set(0, 0.08, 0);
+  headGroup.add(skull);
+
+  // Snout
+  const snout = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.3, 0.38), snoutMat);
+  snout.position.set(0, -0.02, 0.36);
+  headGroup.add(snout);
+
+  // Dark nose tip
+  const nose = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.1, 0.06), darkMat);
+  nose.position.set(0, 0.06, 0.56);
+  headGroup.add(nose);
+
+  // Fiery maw (inside mouth, glows when charging fire)
+  const mouthGlow = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.12, 0.16), mouthFireMat);
+  mouthGlow.position.set(0, -0.1, 0.42);
+  headGroup.add(mouthGlow);
+
+  // Beard
+  const beard = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.28, 0.18), woolMat);
+  beard.position.set(0, -0.28, 0.36);
+  headGroup.add(beard);
+
+  // Horns
+  const hornGeo = new THREE.BoxGeometry(0.11, 0.38, 0.12);
+  const leftHorn = new THREE.Mesh(hornGeo, hornMat);
+  leftHorn.position.set(-0.17, 0.4, -0.02);
+  leftHorn.rotation.x = -0.4;
+  leftHorn.rotation.z = -0.15;
+  headGroup.add(leftHorn);
+
+  const rightHorn = new THREE.Mesh(hornGeo, hornMat);
+  rightHorn.position.set(0.17, 0.4, -0.02);
+  rightHorn.rotation.x = -0.4;
+  rightHorn.rotation.z = 0.15;
+  headGroup.add(rightHorn);
+
+  // Horn tips angled backwards
+  const tipGeo = new THREE.BoxGeometry(0.09, 0.2, 0.1);
+  const leftTip = new THREE.Mesh(tipGeo, hornMat);
+  leftTip.position.set(-0.19, 0.57, -0.17);
+  leftTip.rotation.x = -0.85;
+  headGroup.add(leftTip);
+
+  const rightTip = new THREE.Mesh(tipGeo, hornMat);
+  rightTip.position.set(0.19, 0.57, -0.17);
+  rightTip.rotation.x = -0.85;
+  headGroup.add(rightTip);
+
+  // Ears
+  const earGeo = new THREE.BoxGeometry(0.24, 0.09, 0.08);
+  const leftEar = new THREE.Mesh(earGeo, snoutMat);
+  leftEar.position.set(-0.33, 0.14, -0.06);
+  leftEar.rotation.z = -0.25;
+  headGroup.add(leftEar);
+
+  const rightEar = new THREE.Mesh(earGeo, snoutMat);
+  rightEar.position.set(0.33, 0.14, -0.06);
+  rightEar.rotation.z = 0.25;
+  headGroup.add(rightEar);
+
+  // Eyes (goat horizontal slit look)
+  const eyeGeo = new THREE.BoxGeometry(0.06, 0.08, 0.14);
+  const leftEye = new THREE.Mesh(eyeGeo, eyeMat);
+  leftEye.position.set(-0.26, 0.12, 0.12);
+  headGroup.add(leftEye);
+
+  const rightEye = new THREE.Mesh(eyeGeo, eyeMat);
+  rightEye.position.set(0.26, 0.12, 0.12);
+  headGroup.add(rightEye);
+
+  // Mouth Light for fire charge
+  const mouthLight = new THREE.PointLight(0xff4400, 0, 4);
+  mouthLight.position.set(0, -0.05, 0.6);
+  headGroup.add(mouthLight);
+
+  goat.add(headGroup);
+
+  // Tail
+  const tail = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.22, 0.16), woolMat);
+  tail.position.set(0, 1.1, -0.68);
+  tail.rotation.x = 0.45;
+  goat.add(tail);
+
+  // 4 Legs with top hip pivots
+  const legGeo = new THREE.BoxGeometry(0.2, 0.55, 0.2);
+  const hoofGeo = new THREE.BoxGeometry(0.21, 0.12, 0.21);
+
+  function createLeg(x, z) {
+    const pivot = new THREE.Group();
+    pivot.position.set(x, 0.6, z);
+
+    const legMesh = new THREE.Mesh(legGeo, woolMat);
+    legMesh.position.set(0, -0.25, 0);
+    pivot.add(legMesh);
+
+    const hoof = new THREE.Mesh(hoofGeo, darkMat);
+    hoof.position.set(0, -0.5, 0);
+    pivot.add(hoof);
+
+    goat.add(pivot);
+    return pivot;
+  }
+
+  const legFL = createLeg(-0.28, 0.4);
+  const legFR = createLeg(0.28, 0.4);
+  const legBL = createLeg(-0.28, -0.4);
+  const legBR = createLeg(0.28, -0.4);
+
+  goat.userData = {
+    headGroup,
+    mouthLight,
+    mouthGlow,
+    legs: [legFL, legFR, legBL, legBR]
+  };
+
+  return goat;
+}
+
+function spawnGoats() {
+  const spawnCoords = [
+    [-6, -6],
+    [7, -5],
+    [-7, 7],
+    [6, 6],
+    [0, 8]
+  ];
+
+  spawnCoords.forEach(([gx, gz]) => {
+    // Find terrain height
+    let spawnY = 7;
+    for (let y = WORLD_H; y >= 0; y--) {
+      if (world.has(key(gx, y, gz))) {
+        spawnY = y + 1;
+        break;
+      }
+    }
+
+    const model = createGoatModel();
+    scene.add(model);
+
+    goats.push({
+      mesh: model,
+      pos: new THREE.Vector3(gx + 0.5, spawnY, gz + 0.5),
+      vel: new THREE.Vector3(0, 0, 0),
+      yaw: Math.random() * Math.PI * 2,
+      targetYaw: 0,
+      state: 'idle', // 'idle', 'walk', 'charge', 'spit'
+      stateTimer: 1.5 + Math.random() * 2,
+      fireCooldown: 3.0 + Math.random() * 5.0,
+      chargeTimer: 0,
+      animTime: Math.random() * 10,
+      onGround: true
+    });
+  });
+
+  const countEl = document.getElementById('goat-count');
+  if (countEl) countEl.innerText = goats.length;
+}
+
+spawnGoats();
+
+function updateGoats(dt) {
+  goats.forEach(goat => {
+    goat.animTime += dt;
+    const distToPlayer = goat.pos.distanceTo(player.pos);
+
+    // AI State logic
+    goat.fireCooldown -= dt;
+
+    // Fire spitting initiation: if cooldown up and reasonably close or facing player
+    if (goat.fireCooldown <= 0 && goat.state !== 'charge' && goat.state !== 'spit') {
+      goat.state = 'charge';
+      goat.chargeTimer = 0.85; // Wind up and bleat
+      playGoatBleat();
+    }
+
+    if (goat.state === 'charge') {
+      goat.chargeTimer -= dt;
+
+      // Turn towards player when charging fire
+      const dx = player.pos.x - goat.pos.x;
+      const dz = player.pos.z - goat.pos.z;
+      goat.targetYaw = Math.atan2(dx, dz);
+
+      // Mouth glow effect and sparks
+      goat.mesh.userData.mouthLight.intensity = 2.5 + Math.sin(goat.animTime * 30) * 1.0;
+      goat.mesh.userData.headGroup.rotation.x = -0.32 + Math.sin(goat.animTime * 25) * 0.08; // Head lifted back
+
+      // Emit flame embers from mouth
+      if (Math.random() < 0.45) {
+        const mouthPos = new THREE.Vector3(0, 0, 0.7);
+        goat.mesh.userData.headGroup.localToWorld(mouthPos);
+        const sparkVel = new THREE.Vector3((Math.random() - 0.5) * 1.5, Math.random() * 1.5, (Math.random() - 0.5) * 1.5);
+        spawnParticle(mouthPos, sparkVel, Math.random() > 0.4 ? 0xff4400 : 0xffbb00, 0.35, 0.1);
+      }
+
+      if (goat.chargeTimer <= 0) {
+        // Spit fire!
+        goat.state = 'spit';
+        goat.mesh.userData.mouthLight.intensity = 0;
+        goat.mesh.userData.headGroup.rotation.x = 0.25; // Head snap forward
+
+        const mouthPos = new THREE.Vector3(0, 0, 0.75);
+        goat.mesh.userData.headGroup.localToWorld(mouthPos);
+
+        // Aim towards player chest
+        const aimTarget = player.pos.clone();
+        aimTarget.y -= 0.3;
+        const fireDir = aimTarget.sub(mouthPos).normalize();
+
+        spawnFireball(mouthPos, fireDir);
+
+        // Reset cooldown
+        goat.fireCooldown = 4.5 + Math.random() * 5.0;
+        goat.stateTimer = 1.0;
+      }
+    } else if (goat.state === 'spit') {
+      goat.stateTimer -= dt;
+      if (goat.stateTimer <= 0) {
+        goat.state = 'idle';
+        goat.stateTimer = 1.5 + Math.random() * 2.0;
+      }
+    } else {
+      // Normal wander / idle
+      goat.mesh.userData.mouthLight.intensity = 0;
+      goat.stateTimer -= dt;
+
+      if (goat.stateTimer <= 0) {
+        if (goat.state === 'idle') {
+          goat.state = 'walk';
+          goat.stateTimer = 2.0 + Math.random() * 3.5;
+          goat.targetYaw = Math.random() * Math.PI * 2;
+        } else {
+          goat.state = 'idle';
+          goat.stateTimer = 1.5 + Math.random() * 3.0;
+        }
+      }
+
+      // If player is close, sometimes goat glances at player
+      if (distToPlayer < 9 && Math.random() < 0.04) {
+        const dx = player.pos.x - goat.pos.x;
+        const dz = player.pos.z - goat.pos.z;
+        goat.targetYaw = Math.atan2(dx, dz);
+      }
+    }
+
+    // Smooth rotation towards target yaw
+    let diff = goat.targetYaw - goat.yaw;
+    while (diff < -Math.PI) diff += Math.PI * 2;
+    while (diff > Math.PI) diff -= Math.PI * 2;
+    goat.yaw += diff * Math.min(1.0, 5.0 * dt);
+    goat.mesh.rotation.y = goat.yaw;
+
+    // Movement & Walk animation
+    let isWalking = false;
+    if (goat.state === 'walk') {
+      isWalking = true;
+      const walkSpeed = 2.2;
+      const forward = new THREE.Vector3(Math.sin(goat.yaw), 0, Math.cos(goat.yaw));
+      goat.vel.x = forward.x * walkSpeed;
+      goat.vel.z = forward.z * walkSpeed;
+
+      // Obstacle jump check: if block right in front at foot level, jump!
+      const checkX = goat.pos.x + forward.x * 0.7;
+      const checkZ = goat.pos.z + forward.z * 0.7;
+      const footY = Math.floor(goat.pos.y);
+      const headY = footY + 1;
+      if (world.has(key(Math.floor(checkX), footY, Math.floor(checkZ))) &&
+          !world.has(key(Math.floor(checkX), headY, Math.floor(checkZ))) &&
+          goat.onGround) {
+        goat.vel.y = 6.8; // Goat leap!
+        goat.onGround = false;
+      }
+    } else {
+      goat.vel.x = 0;
+      goat.vel.z = 0;
+    }
+
+    // Animate legs and head
+    if (goat.state !== 'charge') {
+      if (isWalking) {
+        const legSwing = Math.sin(goat.animTime * 9) * 0.65;
+        goat.mesh.userData.legs[0].rotation.x = legSwing;
+        goat.mesh.userData.legs[1].rotation.x = -legSwing;
+        goat.mesh.userData.legs[2].rotation.x = -legSwing;
+        goat.mesh.userData.legs[3].rotation.x = legSwing;
+        goat.mesh.userData.headGroup.rotation.x = Math.sin(goat.animTime * 9) * 0.08;
+      } else {
+        // Idle gentle breathing / chewing
+        goat.mesh.userData.legs.forEach(l => l.rotation.x = 0);
+        goat.mesh.userData.headGroup.rotation.x = Math.sin(goat.animTime * 2.5) * 0.05;
+      }
+    }
+
+    // Gravity
+    goat.vel.y -= 20 * dt;
+
+    // Physics step
+    const newX = goat.pos.x + goat.vel.x * dt;
+    const newZ = goat.pos.z + goat.vel.z * dt;
+    const newY = goat.pos.y + goat.vel.y * dt;
+
+    // Horizontal bounds clamp
+    const limit = (WORLD_W / 2) - 1.5;
+    if (Math.abs(newX) < limit) {
+      if (!isSolid(newX, goat.pos.y + 0.5, goat.pos.z)) {
+        goat.pos.x = newX;
+      } else {
+        goat.targetYaw += Math.PI * 0.6;
+      }
+    } else {
+      goat.targetYaw += Math.PI;
+    }
+
+    if (Math.abs(newZ) < limit) {
+      if (!isSolid(goat.pos.x, goat.pos.y + 0.5, newZ)) {
+        goat.pos.z = newZ;
+      } else {
+        goat.targetYaw += Math.PI * 0.6;
+      }
+    } else {
+      goat.targetYaw += Math.PI;
+    }
+
+    // Vertical collision
+    if (goat.vel.y <= 0) {
+      // Check block directly under goat feet
+      const testX = Math.floor(goat.pos.x);
+      const testY = Math.floor(newY);
+      const testZ = Math.floor(goat.pos.z);
+      if (world.has(key(testX, testY, testZ))) {
+        goat.pos.y = testY + 1.0;
+        goat.vel.y = 0;
+        goat.onGround = true;
+      } else {
+        goat.pos.y = newY;
+        goat.onGround = false;
+      }
+    } else {
+      goat.pos.y = newY;
+      goat.onGround = false;
+    }
+
+    // Void rescue
+    if (goat.pos.y < -10) {
+      goat.pos.set((Math.random() - 0.5) * 14, 12, (Math.random() - 0.5) * 14);
+      goat.vel.set(0, 0, 0);
+    }
+
+    goat.mesh.position.copy(goat.pos);
+  });
+}
+
+function updateProjectilesAndParticles(dt) {
+  // Update Fireballs
+  for (let i = fireballs.length - 1; i >= 0; i--) {
+    const fb = fireballs[i];
+    fb.life -= dt;
+    fb.vel.y -= 7.5 * dt; // Fireball arc
+    fb.mesh.position.addScaledVector(fb.vel, dt);
+
+    // Rotate fireball
+    fb.mesh.rotation.x += 10 * dt;
+    fb.mesh.rotation.y += 12 * dt;
+
+    // Trail particles
+    fb.spawnEmbersTimer += dt;
+    if (fb.spawnEmbersTimer > 0.04) {
+      fb.spawnEmbersTimer = 0;
+      const pOffset = new THREE.Vector3((Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3, (Math.random() - 0.5) * 0.3);
+      spawnParticle(fb.mesh.position.clone().add(pOffset), new THREE.Vector3(0, Math.random() * 0.8, 0), Math.random() > 0.3 ? 0xff4500 : 0xffbb00, 0.45, 0.15);
+    }
+
+    // Check hit with player
+    const distToPlayer = fb.mesh.position.distanceTo(new THREE.Vector3(player.pos.x, player.pos.y - 0.8, player.pos.z));
+    let hit = false;
+    if (distToPlayer < 1.15) {
+      hit = true;
+      const knock = fb.vel.clone().normalize();
+      hurtPlayer(1, knock);
+    }
+
+    // Check hit with blocks
+    const bx = Math.floor(fb.mesh.position.x);
+    const by = Math.floor(fb.mesh.position.y);
+    const bz = Math.floor(fb.mesh.position.z);
+    if (world.has(key(bx, by, bz))) {
+      hit = true;
+    }
+
+    if (hit || fb.life <= 0) {
+      // Explosion burst
+      for (let p = 0; p < 14; p++) {
+        const pVel = new THREE.Vector3(
+          (Math.random() - 0.5) * 4.5,
+          Math.random() * 3.5,
+          (Math.random() - 0.5) * 4.5
+        );
+        const col = Math.random() > 0.5 ? 0xff2200 : (Math.random() > 0.5 ? 0xff8800 : 0xffdd00);
+        spawnParticle(fb.mesh.position, pVel, col, 0.6 + Math.random() * 0.4, 0.2);
+      }
+      scene.remove(fb.mesh);
+      fireballs.splice(i, 1);
+    }
+  }
+
+  // Update Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.life -= dt;
+    if (p.life <= 0) {
+      scene.remove(p.mesh);
+      particles.splice(i, 1);
+      continue;
+    }
+
+    p.mesh.position.addScaledVector(p.vel, dt);
+    p.vel.y += 0.8 * dt; // Smoke rises
+    const progress = p.life / p.maxLife;
+    p.mesh.scale.setScalar(p.initialScale * progress);
+    p.mesh.material.opacity = progress;
+  }
+}
+
+// Resize Handler
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// --- MAIN LOOP ---
+let lastTime = performance.now();
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  const now = performance.now();
+  const dt = Math.min((now - lastTime) / 1000, 0.1);
+  lastTime = now;
+
+  if (playerInvulnTimer > 0) {
+    playerInvulnTimer -= dt;
+  }
+
+  updateGoats(dt);
+  updateProjectilesAndParticles(dt);
+
+  if (isLocked) {
+    // Controls
+    const speed = keys['ShiftLeft'] || keys['ShiftRight'] ? 4.5 : 7.0;
+    const moveDir = new THREE.Vector3();
+
+    if (keys['KeyW']) moveDir.z -= 1;
+    if (keys['KeyS']) moveDir.z += 1;
+    if (keys['KeyA']) moveDir.x -= 1;
+    if (keys['KeyD']) moveDir.x += 1;
+    moveDir.normalize();
+
+    // Rotate move direction with yaw
+    const forward = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+    const right = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
+    const moveVel = new THREE.Vector3()
+      .addScaledVector(forward, -moveDir.z)
+      .addScaledVector(right, moveDir.x)
+      .multiplyScalar(speed);
+
+    // Gravity & Jump
+    player.vel.y -= 22 * dt;
+    if (keys['Space'] && player.onGround) {
+      player.vel.y = 8.5;
+      player.onGround = false;
+    }
+
+    // Step X
+    const newPosX = player.pos.clone();
+    newPosX.x += moveVel.x * dt;
+    if (!checkCollision(newPosX)) {
+      player.pos.x = newPosX.x;
+    }
+
+    // Step Z
+    const newPosZ = player.pos.clone();
+    newPosZ.z += moveVel.z * dt;
+    if (!checkCollision(newPosZ)) {
+      player.pos.z = newPosZ.z;
+    }
+
+    // Step Y
+    const newPosY = player.pos.clone();
+    newPosY.y += player.vel.y * dt;
+    if (!checkCollision(newPosY)) {
+      player.pos.y = newPosY.y;
+      player.onGround = false;
+    } else {
+      if (player.vel.y < 0) {
+        player.onGround = true;
+      }
+      player.vel.y = 0;
+    }
+
+    // Void reset
+    if (player.pos.y < -15) {
+      player.pos.set(0, 15, 0);
+      player.vel.set(0, 0, 0);
+    }
+  }
+
+  // Camera update
+  camera.position.set(player.pos.x, player.pos.y, player.pos.z);
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = player.yaw;
+  camera.rotation.x = player.pitch;
+
+  updateRaycast();
+
+  // Position UI
+  document.getElementById('pos-info').innerText = 
+    `X: ${Math.floor(player.pos.x)}, Y: ${Math.floor(player.pos.y)}, Z: ${Math.floor(player.pos.z)}`;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+</script>
+</body>
+</html>
