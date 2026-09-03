@@ -473,7 +473,7 @@ function updateHealthUI() {
 }
 
 function hurtPlayer(amount, knockDir) {
-  if (playerInvulnTimer > 0) return;
+  if (!isLocked || playerInvulnTimer > 0) return;
   playerHealth -= amount;
   playerInvulnTimer = 0.8;
   playPlayerHurtSound();
@@ -564,6 +564,8 @@ function lockGame() {
   initAudio();
   isLocked = true;
   blocker.style.display = 'none';
+  playerInvulnTimer = 1.5; // Grace period on start/resume
+  updateHealthUI();
 
   // Request pointer lock across standard and WebKit implementations
   const req = canvas.requestPointerLock || canvas.webkitRequestPointerLock || canvas.mozRequestPointerLock;
@@ -1260,14 +1262,14 @@ function animate() {
   const dt = Math.min((now - lastTime) / 1000, 0.1);
   lastTime = now;
 
-  if (playerInvulnTimer > 0) {
-    playerInvulnTimer -= dt;
-  }
-
-  updateGoats(dt);
-  updateProjectilesAndParticles(dt);
-
   if (isLocked) {
+    if (playerInvulnTimer > 0) {
+      playerInvulnTimer -= dt;
+    }
+
+    updateGoats(dt);
+    updateProjectilesAndParticles(dt);
+
     // Controls
     const speed = keys['ShiftLeft'] || keys['ShiftRight'] ? 4.5 : 7.0;
     const moveDir = new THREE.Vector3();
