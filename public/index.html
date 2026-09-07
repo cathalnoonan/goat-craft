@@ -116,6 +116,116 @@
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.4);
   }
+  /* AC-130 Toolbelt Slot */
+  .slot-ac130 {
+    border-color: #2e6b36;
+    background: rgba(10, 35, 15, 0.7);
+  }
+  .slot-ac130:hover {
+    border-color: #55ff55;
+    transform: scale(1.05);
+  }
+  .slot-ac130.active {
+    border-color: #00ff66 !important;
+    box-shadow: 0 0 14px #00ff66, inset 0 0 8px rgba(0, 255, 100, 0.4) !important;
+    animation: ac130-pulse 1.4s infinite alternate;
+  }
+  @keyframes ac130-pulse {
+    0% { transform: scale(1.12); box-shadow: 0 0 10px #00ff66; }
+    100% { transform: scale(1.18); box-shadow: 0 0 22px #55ff55, inset 0 0 12px rgba(0, 255, 100, 0.6); }
+  }
+
+  /* AC-130 Fullscreen Gunner HUD */
+  #ac130-hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+    pointer-events: none;
+    z-index: 85;
+    font-family: 'Consolas', 'Courier New', monospace;
+    color: #00ff66;
+    text-shadow: 0 0 4px #00ff66;
+    overflow: hidden;
+  }
+  #ac130-hud.flir-bw {
+    color: #ffffff;
+    text-shadow: 0 0 4px #ffffff;
+  }
+  #ac130-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+      radial-gradient(ellipse at center, rgba(0, 25, 10, 0.12) 0%, rgba(0, 15, 5, 0.8) 100%),
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.22) 0px, rgba(0, 0, 0, 0.22) 1px, transparent 2px, transparent 4px);
+    pointer-events: none;
+  }
+  #ac130-hud.flir-bw #ac130-overlay {
+    background: 
+      radial-gradient(ellipse at center, rgba(20, 20, 20, 0.12) 0%, rgba(0, 0, 0, 0.88) 100%),
+      repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.25) 0px, rgba(0, 0, 0, 0.25) 1px, transparent 2px, transparent 4px);
+  }
+  #ac130-crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 300px;
+    height: 300px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+  .ac130-target-box {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    transition: left 0.05s linear, top 0.05s linear;
+  }
+  .ac130-target-box .bracket {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-color: currentColor;
+    border-style: solid;
+  }
+  .ac130-target-box .bracket.top-left { top: 0; left: 0; border-width: 2px 0 0 2px; }
+  .ac130-target-box .bracket.top-right { top: 0; right: 0; border-width: 2px 2px 0 0; }
+  .ac130-target-box .bracket.bottom-left { bottom: 0; left: 0; border-width: 0 0 2px 2px; }
+  .ac130-target-box .bracket.bottom-right { bottom: 0; right: 0; border-width: 0 2px 2px 0; }
+  .ac130-target-box .tgt-info {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-size: 9px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    background: rgba(0, 0, 0, 0.75);
+    padding: 1px 5px;
+    border-radius: 2px;
+    border: 1px solid rgba(0, 255, 100, 0.4);
+  }
+  #ac130-hud.flir-bw .ac130-target-box .tgt-info {
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  .ac130-wpn-btn {
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .ac130-wpn-btn:hover {
+    background: rgba(0, 255, 100, 0.25) !important;
+  }
+  .ac130-wpn-btn.active {
+    background: rgba(0, 255, 100, 0.3) !important;
+    border-color: currentColor !important;
+    box-shadow: 0 0 8px currentColor;
+  }
 </style>
 <!-- Load Three.js from unpkg/cdnjs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -127,12 +237,109 @@
   <p>Click anywhere to Play</p>
   <p><b>WASD</b> to Move | <b>SPACE</b> to Jump | <b>SHIFT</b> to Sneak</p>
   <p><b>Left Click</b>: Break Block | <b>Right Click</b>: Place Block</p>
-  <p><b>1-5 / Scroll</b>: Select Block</p>
-  <p style="color: #ffaa55; margin-top: 6px;">🐐 <b>Beware: Roaming NPC Goats Spit Fire!</b></p>
+  <p><b>1-5 / Scroll</b>: Select Block | <b>6 or Toolbelt</b>: 🛩️ <b>AC-130 Gunner Mode</b></p>
+  <p style="color: #55ff55; margin-top: 4px;">🎯 <b>AC-130 Gunner</b>: Rain explosive 105mm/40mm/25mm shells that shatter blocks & injure goats!</p>
+  <p style="color: #ffaa55; margin-top: 4px;">🐐 <b>Beware: Roaming NPC Goats Spit Fire!</b></p>
   <button class="btn-start">CLICK TO START</button>
 </div>
 
 <div id="crosshair"></div>
+
+<!-- AC-130 Fullscreen Gunner HUD -->
+<div id="ac130-hud">
+  <div id="ac130-overlay"></div>
+
+  <!-- Top Telemetry Header -->
+  <div id="ac130-top-bar" style="position:absolute;top:18px;left:24px;right:24px;display:flex;justify-content:space-between;align-items:flex-start;font-size:13px;pointer-events:none;z-index:90;">
+    <div>
+      <div style="font-size:18px;font-weight:bold;letter-spacing:2px;color:currentColor;">AC-130U SPOOKY // GHOST-1</div>
+      <div style="opacity:0.75;margin-top:2px;font-size:11px;">SYS: FLIR TARGETING & FIRE CONTROL // ORBIT: ACTIVE</div>
+    </div>
+    <div style="text-align:right;">
+      <div id="ac130-az" style="font-weight:bold;">AZ: 000°</div>
+      <div id="ac130-el" style="opacity:0.75;">EL: -45°</div>
+      <div id="ac130-rng" style="color:currentColor;font-weight:bold;">RNG: 120 FT</div>
+    </div>
+  </div>
+
+  <!-- Kill Banner -->
+  <div id="ac130-kill-banner" style="position:absolute;top:75px;left:50%;transform:translate(-50%,0);font-size:18px;font-weight:bold;letter-spacing:2px;color:#ff4444;text-shadow:0 0 10px #ff2222;background:rgba(0,0,0,0.8);padding:6px 22px;border:2px solid #ff4444;border-radius:4px;opacity:0;transition:all 0.2s;pointer-events:none;z-index:95;"></div>
+
+  <!-- Weapon Switch Tip Pop-up (Shows for 5 seconds after 5 shots) -->
+  <div id="ac130-weapon-tip" style="position:absolute;top:130px;left:50%;transform:translate(-50%,-10px);background:rgba(0,20,8,0.92);border:2px solid currentColor;box-shadow:0 0 25px currentColor;color:currentColor;padding:12px 24px;border-radius:6px;font-size:14px;font-weight:bold;letter-spacing:1px;text-align:center;pointer-events:none;opacity:0;transition:opacity 0.4s ease, transform 0.4s ease;z-index:99;max-width:92%;">
+    <div style="font-size:11px;opacity:0.8;margin-bottom:4px;letter-spacing:1.5px;">SYSTEM NOTIFICATION // TACTICAL ADVISORY</div>
+    <div>Press <span style="color:#ffffff;background:rgba(255,255,255,0.25);padding:2px 8px;border-radius:3px;border:1px solid currentColor;">1</span>, <span style="color:#ffffff;background:rgba(255,255,255,0.25);padding:2px 8px;border-radius:3px;border:1px solid currentColor;">2</span>, or <span style="color:#ffffff;background:rgba(255,255,255,0.25);padding:2px 8px;border-radius:3px;border:1px solid currentColor;">3</span> to switch between weapons!</div>
+  </div>
+
+  <!-- Center Crosshair Reticle -->
+  <div id="ac130-crosshair">
+    <svg width="300" height="300" viewBox="0 0 300 300" style="width:100%;height:100%;">
+      <!-- Outer circle -->
+      <circle cx="150" cy="150" r="120" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="10 8" opacity="0.6"/>
+      <!-- Inner ring -->
+      <circle cx="150" cy="150" r="48" fill="none" stroke="currentColor" stroke-width="1.2" opacity="0.8"/>
+      <!-- Center crosshairs -->
+      <line x1="150" y1="118" x2="150" y2="142" stroke="currentColor" stroke-width="2"/>
+      <line x1="150" y1="158" x2="150" y2="182" stroke="currentColor" stroke-width="2"/>
+      <line x1="118" y1="150" x2="142" y2="150" stroke="currentColor" stroke-width="2"/>
+      <line x1="158" y1="150" x2="182" y2="150" stroke="currentColor" stroke-width="2"/>
+      <!-- Center pipper dot -->
+      <circle cx="150" cy="150" r="2.5" fill="currentColor"/>
+      <!-- Corner brackets -->
+      <path d="M 70 100 L 70 70 L 100 70" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M 230 100 L 230 70 L 200 70" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M 70 200 L 70 230 L 100 230" fill="none" stroke="currentColor" stroke-width="2"/>
+      <path d="M 230 200 L 230 230 L 200 230" fill="none" stroke="currentColor" stroke-width="2"/>
+      <!-- Compass ticks -->
+      <line x1="150" y1="28" x2="150" y2="12" stroke="currentColor" stroke-width="2"/>
+      <line x1="150" y1="272" x2="150" y2="288" stroke="currentColor" stroke-width="2"/>
+      <line x1="28" y1="150" x2="12" y2="150" stroke="currentColor" stroke-width="2"/>
+      <line x1="272" y1="150" x2="288" y2="150" stroke="currentColor" stroke-width="2"/>
+    </svg>
+    <div id="ac130-crosshair-label" style="position:absolute;bottom:15px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:1px;white-space:nowrap;font-weight:bold;opacity:0.9;">105MM HE // PIPPER</div>
+  </div>
+
+  <!-- Dynamic Live Goat Target Tracking Brackets Container -->
+  <div id="ac130-targets" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;"></div>
+
+  <!-- Left Side Weapon / Ordnance Panel -->
+  <div id="ac130-weapons-panel" style="position:absolute;bottom:85px;left:24px;background:rgba(0,15,5,0.8);border:1px solid currentColor;padding:12px 14px;border-radius:6px;width:235px;pointer-events:auto;z-index:90;">
+    <div style="font-size:12px;font-weight:bold;margin-bottom:8px;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:4px;">ORDNANCE [Q/E / 1-3]</div>
+    <div class="ac130-wpn-btn active" data-widx="0" id="wpn-btn-0" style="padding:4px 8px;margin-bottom:4px;border:1px solid currentColor;border-radius:4px;cursor:pointer;font-size:12px;display:flex;justify-content:space-between;background:rgba(0,255,100,0.18);">
+      <span>[1] 105MM HOWITZER</span><span style="font-weight:bold;">HE</span>
+    </div>
+    <div class="ac130-wpn-btn" data-widx="1" id="wpn-btn-1" style="padding:4px 8px;margin-bottom:4px;border:1px solid rgba(255,255,255,0.3);border-radius:4px;cursor:pointer;font-size:12px;display:flex;justify-content:space-between;">
+      <span>[2] 40MM BOFORS</span><span style="font-weight:bold;">AUTO</span>
+    </div>
+    <div class="ac130-wpn-btn" data-widx="2" id="wpn-btn-2" style="padding:4px 8px;margin-bottom:8px;border:1px solid rgba(255,255,255,0.3);border-radius:4px;cursor:pointer;font-size:12px;display:flex;justify-content:space-between;">
+      <span>[3] 25MM GATLING</span><span style="font-weight:bold;">RAPID</span>
+    </div>
+    <!-- Reload progress bar -->
+    <div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px;">
+        <span id="ac130-weapon-name">105MM HE</span>
+        <span id="ac130-reload-text">READY</span>
+      </div>
+      <div style="width:100%;height:6px;background:rgba(0,0,0,0.6);border:1px solid currentColor;border-radius:2px;overflow:hidden;">
+        <div id="ac130-reload-bar" style="width:100%;height:100%;background:currentColor;transition:width 0.05s linear;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Side Camera / Sensor Controls -->
+  <div id="ac130-sensor-panel" style="position:absolute;bottom:85px;right:24px;background:rgba(0,15,5,0.8);border:1px solid currentColor;padding:12px 14px;border-radius:6px;width:220px;pointer-events:auto;text-align:right;z-index:90;">
+    <div style="font-size:12px;font-weight:bold;margin-bottom:8px;letter-spacing:1px;border-bottom:1px solid rgba(255,255,255,0.2);padding-bottom:4px;text-align:left;">SENSORS & OPTICS</div>
+    <div style="font-size:12px;margin-bottom:6px;">ZOOM: <b id="ac130-zoom-label" style="color:#fff;">1.0X</b> <span style="font-size:10px;opacity:0.75;">[R / R-CLICK]</span></div>
+    <button id="ac130-zoom-btn" style="background:#0a2912;border:1px solid currentColor;color:currentColor;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:11px;margin-bottom:6px;width:100%;">CYCLE ZOOM (1x / 2.5x / 5x)</button>
+    <button id="ac130-flir-btn" style="background:#0a2912;border:1px solid currentColor;color:currentColor;padding:5px 10px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:11px;margin-bottom:6px;width:100%;">FLIR MODE: GREEN [T]</button>
+    <button id="ac130-exit-btn" style="background:#4a1212;border:1px solid #ff4444;color:#ff8888;padding:7px 10px;border-radius:4px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:bold;width:100%;margin-top:2px;">❌ EXIT GUNNER (ESC / 6)</button>
+  </div>
+
+  <!-- Bottom Instructions Banner -->
+  <div style="position:absolute;bottom:24px;left:50%;transform:translateX(-50%);text-align:center;font-size:11px;background:rgba(0,0,0,0.75);padding:6px 18px;border-radius:6px;border:1px solid rgba(0,255,100,0.4);pointer-events:none;z-index:90;letter-spacing:0.5px;">
+    <span>[L-CLICK]: FIRE | [R-CLICK / R]: ZOOM | [Q/E / 1-3]: WEAPON | [T]: FLIR | [ESC / 6]: EXIT</span>
+  </div>
+</div>
 
 <div id="damage-flash" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;background:rgba(255,0,0,0);transition:background 0.15s;z-index:90;"></div>
 
@@ -169,6 +376,11 @@
     <span class="slot-key">5</span>
     <div class="slot-preview" style="background:#3d6e24;"></div>
     <span>Leaves</span>
+  </div>
+  <div class="slot slot-ac130" data-id="6" id="slot-ac130" title="AC-130 Gunner Mode [Press 6]">
+    <span class="slot-key">6</span>
+    <div class="slot-preview" style="background:#0d2912;border:1px solid #00ff66;display:flex;align-items:center;justify-content:center;font-size:14px;">🛩️</div>
+    <span style="color:#55ff55;font-size:10px;">AC-130</span>
   </div>
 </div>
 
@@ -265,8 +477,8 @@ function getMaterials(type) {
 }
 
 // --- WORLD INITIALIZATION ---
-const WORLD_W = 28;
-const WORLD_D = 28;
+const WORLD_W = 32;
+const WORLD_D = 32;
 const WORLD_H = 16;
 const world = new Map(); // "x,y,z" -> { type, mesh }
 
@@ -274,7 +486,7 @@ function key(x, y, z) { return `${x},${y},${z}`; }
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x78a7ff);
-scene.fog = new THREE.FogExp2(0x78a7ff, 0.035);
+scene.fog = new THREE.Fog(0x78a7ff, 65, 180);
 
 const canvas = document.getElementById('canvas');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: false });
@@ -328,7 +540,7 @@ const offset = Math.floor(WORLD_W / 2);
 for (let x = -offset; x < offset; x++) {
   for (let z = -offset; z < offset; z++) {
     const h = getTerrainHeight(x, z);
-    for (let y = 0; y <= h; y++) {
+    for (let y = Math.max(0, h - 4); y <= h; y++) {
       let bType = BLOCK_TYPES.STONE;
       if (y === h) bType = BLOCK_TYPES.GRASS;
       else if (y >= h - 2) bType = BLOCK_TYPES.DIRT;
@@ -380,7 +592,7 @@ function initAudio() {
 }
 
 function playGoatBleat() {
-  if (!audioCtx) return;
+  if (!audioCtx || ac130Active) return;
   try {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
@@ -414,7 +626,7 @@ function playGoatBleat() {
 }
 
 function playFireSpitSound() {
-  if (!audioCtx) return;
+  if (!audioCtx || ac130Active) return;
   try {
     const now = audioCtx.currentTime;
     const bufferSize = audioCtx.sampleRate * 0.45;
@@ -462,6 +674,217 @@ function playPlayerHurtSound() {
   } catch (e) {}
 }
 
+// --- AC-130 AUDIO SYNTHESIS ---
+function playAC130CannonSound(type) {
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    if (type === '105mm') {
+      // 105mm Howitzer: Massive low-end boom + thunderous crack
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(95, now);
+      osc.frequency.exponentialRampToValueAtTime(20, now + 0.5);
+      gain.gain.setValueAtTime(0.75, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.6);
+
+      // Noise punch
+      const bufSize = Math.floor(audioCtx.sampleRate * 0.35);
+      const buffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < bufSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * 0.08));
+      }
+      const noise = audioCtx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(500, now);
+      filter.frequency.exponentialRampToValueAtTime(80, now + 0.3);
+      const nGain = audioCtx.createGain();
+      nGain.gain.setValueAtTime(0.6, now);
+      nGain.gain.exponentialRampToValueAtTime(0.01, now + 0.32);
+      noise.connect(filter);
+      filter.connect(nGain);
+      nGain.connect(audioCtx.destination);
+      noise.start(now);
+    } else if (type === '40mm') {
+      // 40mm Bofors: Punchy mid-bass thump
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.18);
+      gain.gain.setValueAtTime(0.45, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.18);
+    } else {
+      // 25mm Gatling: High-speed mechanical snap
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(280, now);
+      osc.frequency.exponentialRampToValueAtTime(70, now + 0.07);
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.07);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.07);
+    }
+  } catch (e) {}
+}
+
+function playAC130ExplosionSound(size) {
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    const dur = Math.min(1.4, 0.45 + size * 0.2);
+    const bufSize = Math.floor(audioCtx.sampleRate * dur);
+    const buffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < bufSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audioCtx.sampleRate * (0.16 + size * 0.07)));
+    }
+    const noise = audioCtx.createBufferSource();
+    noise.buffer = buffer;
+
+    const filter = audioCtx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(750, now);
+    filter.frequency.exponentialRampToValueAtTime(80, now + dur);
+
+    const gain = audioCtx.createGain();
+    const vol = Math.min(0.85, 0.35 + size * 0.12);
+    gain.gain.setValueAtTime(vol, now);
+    gain.gain.exponentialRampToValueAtTime(0.01, now + dur);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(audioCtx.destination);
+    noise.start(now);
+
+    // Deep sub-boom oscillator
+    const sub = audioCtx.createOscillator();
+    const subGain = audioCtx.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(80, now);
+    sub.frequency.exponentialRampToValueAtTime(22, now + 0.55);
+    subGain.gain.setValueAtTime(vol * 0.75, now);
+    subGain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+    sub.connect(subGain);
+    subGain.connect(audioCtx.destination);
+    sub.start(now);
+    sub.stop(now + 0.55);
+  } catch (e) {}
+}
+
+function playGoatHurtBleat() {
+  if (!audioCtx || ac130Active) return;
+  try {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    const vibrato = audioCtx.createOscillator();
+    const vibratoGain = audioCtx.createGain();
+
+    const baseFreq = 340 + Math.random() * 80;
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(baseFreq, now);
+    osc.frequency.linearRampToValueAtTime(baseFreq * 0.7, now + 0.4);
+
+    vibrato.frequency.setValueAtTime(22, now);
+    vibratoGain.gain.setValueAtTime(45, now);
+    vibrato.connect(osc.frequency);
+
+    gain.gain.setValueAtTime(0.25, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    vibrato.start(now);
+    osc.start(now);
+    vibrato.stop(now + 0.45);
+    osc.stop(now + 0.45);
+  } catch (e) {}
+}
+
+function playKillConfirmTone() {
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    // Tone 1: High alert chirping beep
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = 'sine';
+    osc1.frequency.setValueAtTime(1450, now);
+    osc1.frequency.exponentialRampToValueAtTime(1750, now + 0.05);
+    gain1.gain.setValueAtTime(0.25, now);
+    gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+    osc1.connect(gain1);
+    gain1.connect(audioCtx.destination);
+    osc1.start(now);
+    osc1.stop(now + 0.08);
+
+    // Tone 2: Secondary confirmation kill ping
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(2200, now + 0.09);
+    osc2.frequency.exponentialRampToValueAtTime(2650, now + 0.16);
+    gain2.gain.setValueAtTime(0.3, now + 0.09);
+    gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.24);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.start(now + 0.09);
+    osc2.stop(now + 0.24);
+  } catch (e) {}
+}
+
+function playBeep(freq = 880, dur = 0.08) {
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq, now);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + dur);
+  } catch (e) {}
+}
+
+function playAC130Radio() {
+  if (!audioCtx) return;
+  try {
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(1350, now);
+    osc.frequency.setValueAtTime(1850, now + 0.05);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.start(now);
+    osc.stop(now + 0.12);
+  } catch (e) {}
+}
+
 // --- PLAYER PHYSICS & CONTROLS ---
 let playerHealth = 5;
 let playerInvulnTimer = 0;
@@ -473,7 +896,7 @@ function updateHealthUI() {
 }
 
 function hurtPlayer(amount, knockDir) {
-  if (!isLocked || playerInvulnTimer > 0) return;
+  if (!isLocked || playerInvulnTimer > 0 || ac130Active) return;
   playerHealth -= amount;
   playerInvulnTimer = 0.8;
   playPlayerHurtSound();
@@ -517,11 +940,33 @@ const player = {
 const keys = {};
 let activeSlot = 1;
 
+function handleSlotSelect(slot) {
+  if (slot === 6) {
+    toggleAC130Mode();
+  } else {
+    if (ac130Active) {
+      exitAC130Mode();
+    }
+    activeSlot = slot;
+    updateHotbar();
+  }
+}
+
 window.addEventListener('keydown', (e) => {
   keys[e.code] = true;
-  if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5'].includes(e.code)) {
-    activeSlot = parseInt(e.code.replace('Digit', ''));
-    updateHotbar();
+  if (['Digit1', 'Digit2', 'Digit3', 'Digit4', 'Digit5', 'Digit6'].includes(e.code)) {
+    const slot = parseInt(e.code.replace('Digit', ''));
+    if (ac130Active && slot >= 1 && slot <= 3) {
+      selectAC130Weapon(slot - 1);
+    } else {
+      handleSlotSelect(slot);
+    }
+  }
+  if (ac130Active) {
+    if (e.code === 'KeyQ') switchAC130Weapon(-1);
+    if (e.code === 'KeyE') switchAC130Weapon(1);
+    if (e.code === 'KeyR') toggleAC130Zoom();
+    if (e.code === 'KeyT') toggleFLIRPalette();
   }
 });
 
@@ -533,20 +978,32 @@ window.addEventListener('keyup', (e) => {
 const slots = document.querySelectorAll('.slot');
 function updateHotbar() {
   slots.forEach(s => {
-    if (parseInt(s.dataset.id) === activeSlot) s.classList.add('active');
-    else s.classList.remove('active');
+    const id = parseInt(s.dataset.id);
+    if (ac130Active) {
+      if (id === 6) s.classList.add('active');
+      else s.classList.remove('active');
+    } else {
+      if (id === activeSlot) s.classList.add('active');
+      else s.classList.remove('active');
+    }
   });
 }
 slots.forEach(s => {
-  s.addEventListener('click', () => {
-    activeSlot = parseInt(s.dataset.id);
-    updateHotbar();
+  s.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const id = parseInt(s.dataset.id);
+    handleSlotSelect(id);
   });
 });
 window.addEventListener('wheel', (e) => {
-  if (e.deltaY > 0) activeSlot = (activeSlot % 5) + 1;
-  else activeSlot = ((activeSlot - 2 + 5) % 5) + 1;
-  updateHotbar();
+  if (ac130Active) {
+    if (e.deltaY > 0) toggleAC130Zoom(1);
+    else toggleAC130Zoom(-1);
+    return;
+  }
+  if (e.deltaY > 0) activeSlot = (activeSlot % 6) + 1;
+  else activeSlot = ((activeSlot - 2 + 6) % 6) + 1;
+  handleSlotSelect(activeSlot);
 });
 
 // Pointer Lock & Controls (with Safari / WebKit support & fallback)
@@ -634,10 +1091,14 @@ if (startBtn) {
   });
 });
 
-// Escape key to pause
+// Escape key to exit AC-130 mode or pause
 window.addEventListener('keydown', (e) => {
-  if (e.code === 'Escape' && isLocked) {
-    unlockGame();
+  if (e.code === 'Escape') {
+    if (ac130Active) {
+      exitAC130Mode();
+    } else if (isLocked) {
+      unlockGame();
+    }
   }
 });
 
@@ -673,6 +1134,14 @@ document.addEventListener('mousemove', (e) => {
   // Prevent large jumps on lock entry
   if (Math.abs(mx) > 120) mx = 0;
   if (Math.abs(my) > 120) my = 0;
+
+  if (ac130Active) {
+    const zoomFactor = camera.fov / 72;
+    ac130Yaw -= mx * 0.0022 * zoomFactor;
+    ac130Pitch -= my * 0.0022 * zoomFactor;
+    ac130Pitch = Math.max(-Math.PI * 0.48, Math.min(-0.15, ac130Pitch));
+    return;
+  }
 
   const sens = 0.0022;
   player.yaw -= mx * sens;
@@ -734,7 +1203,19 @@ function updateRaycast() {
 
 // Mouse actions
 window.addEventListener('mousedown', (e) => {
-  if (!isLocked || !lookAtTarget) return;
+  if (!isLocked) return;
+
+  if (ac130Active) {
+    if (e.button === 0) {
+      ac130Firing = true;
+      fireAC130Weapon();
+    } else if (e.button === 2) {
+      toggleAC130Zoom();
+    }
+    return;
+  }
+
+  if (!lookAtTarget) return;
 
   if (e.button === 0) {
     // Left click: Break block
@@ -754,6 +1235,11 @@ window.addEventListener('mousedown', (e) => {
       addBlock(pp.x, pp.y, pp.z, activeSlot);
       document.getElementById('block-count').innerText = world.size;
     }
+  }
+});
+window.addEventListener('mouseup', (e) => {
+  if (e.button === 0) {
+    ac130Firing = false;
   }
 });
 window.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -795,6 +1281,667 @@ function spawnFireball(origin, targetDir) {
     spawnEmbersTimer: 0
   });
 }
+
+// --- AC-130 GUNSHIP SYSTEM ---
+let ac130Active = false;
+let ac130Yaw = 0;
+let ac130Pitch = -0.75;
+let ac130OrbitAngle = 0;
+const ac130OrbitRadius = 36;
+const ac130OrbitHeight = 38;
+let ac130Firing = false;
+let ac130WeaponCooldown = 0;
+const ac130ZoomLevels = [72, 34, 15];
+const ac130ZoomLabels = ['1.0X', '2.5X', '5.0X'];
+let ac130CurrentZoomIdx = 0;
+let ac130Palette = 'green';
+let ac130TargetPoint = new THREE.Vector3(0, 7, 0);
+let cameraShake = 0;
+let killBannerTimeout = null;
+let ac130ShotsFired = 0;
+let ac130WeaponTipShown = false;
+let weaponTipTimeout = null;
+
+function showAC130WeaponTip() {
+  const tipEl = document.getElementById('ac130-weapon-tip');
+  if (!tipEl) return;
+  playAC130Radio();
+  tipEl.style.opacity = '1';
+  tipEl.style.transform = 'translate(-50%, 0)';
+  if (weaponTipTimeout) clearTimeout(weaponTipTimeout);
+  weaponTipTimeout = setTimeout(() => {
+    tipEl.style.opacity = '0';
+    tipEl.style.transform = 'translate(-50%, -10px)';
+  }, 5000);
+}
+
+const ac130Weapons = [
+  {
+    name: '105MM HE HOWITZER',
+    short: '105MM HE',
+    cooldown: 0.5, // 500ms delay between shots
+    blastRadius: 5.5, // Massive explosive crater
+    damage: 100,
+    maxBlocks: 200, // Destroys up to 200 blocks per blast!
+    auto: true, // Hold left click to continuously fire every 500ms!
+    shake: 1.15,
+    tracerColor: 0xffaa22,
+    sound: '105mm'
+  },
+  {
+    name: '40MM BOFORS AUTO-CANNON',
+    short: '40MM BOFORS',
+    cooldown: 0.28,
+    blastRadius: 1.8,
+    damage: 9,
+    maxBlocks: 12,
+    auto: true,
+    shake: 0.35,
+    tracerColor: 0xffdd44,
+    sound: '40mm'
+  },
+  {
+    name: '25MM GATLING EQUALIZER',
+    short: '25MM GATLING',
+    cooldown: 0.035, // x2 times faster!
+    blastRadius: 0.9,
+    damage: 1,
+    maxBlocks: 3,
+    auto: true,
+    shake: 0.12,
+    tracerColor: 0xffff99,
+    sound: '25mm'
+  }
+];
+let currentWeaponIdx = 0;
+const ac130Tracers = [];
+const activeAnimators = [];
+
+function selectAC130Weapon(idx) {
+  if (idx < 0 || idx >= ac130Weapons.length) return;
+  currentWeaponIdx = idx;
+  playBeep(920, 0.05);
+  for (let i = 0; i < 3; i++) {
+    const btn = document.getElementById(`wpn-btn-${i}`);
+    if (btn) {
+      if (i === currentWeaponIdx) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    }
+  }
+  const label = document.getElementById('ac130-crosshair-label');
+  if (label) label.innerText = `${ac130Weapons[currentWeaponIdx].short} // PIPPER`;
+}
+
+function switchAC130Weapon(dir) {
+  let next = (currentWeaponIdx + dir + ac130Weapons.length) % ac130Weapons.length;
+  selectAC130Weapon(next);
+}
+
+function toggleAC130Zoom(dir = 1) {
+  if (dir > 0) {
+    ac130CurrentZoomIdx = (ac130CurrentZoomIdx + 1) % ac130ZoomLevels.length;
+  } else {
+    ac130CurrentZoomIdx = (ac130CurrentZoomIdx - 1 + ac130ZoomLevels.length) % ac130ZoomLevels.length;
+  }
+  camera.fov = ac130ZoomLevels[ac130CurrentZoomIdx];
+  camera.updateProjectionMatrix();
+  playBeep(1200 + ac130CurrentZoomIdx * 300, 0.07);
+
+  const zl = document.getElementById('ac130-zoom-label');
+  if (zl) zl.innerText = ac130ZoomLabels[ac130CurrentZoomIdx];
+}
+
+function toggleFLIRPalette() {
+  const hud = document.getElementById('ac130-hud');
+  const btn = document.getElementById('ac130-flir-btn');
+  playBeep(850, 0.06);
+
+  if (ac130Palette === 'green') {
+    ac130Palette = 'bw';
+    if (hud) hud.classList.add('flir-bw');
+    if (btn) btn.innerText = 'FLIR MODE: WHITE-HOT [T]';
+    renderer.domElement.style.filter = 'contrast(1.65) brightness(0.92) grayscale(1)';
+  } else {
+    ac130Palette = 'green';
+    if (hud) hud.classList.remove('flir-bw');
+    if (btn) btn.innerText = 'FLIR MODE: GREEN [T]';
+    renderer.domElement.style.filter = 'contrast(1.35) brightness(1.08) saturate(0.25) sepia(0.75) hue-rotate(85deg)';
+  }
+}
+
+function applyFLIRPalette() {
+  const hud = document.getElementById('ac130-hud');
+  if (ac130Palette === 'green') {
+    if (hud) hud.classList.remove('flir-bw');
+    renderer.domElement.style.filter = 'contrast(1.35) brightness(1.08) saturate(0.25) sepia(0.75) hue-rotate(85deg)';
+  } else {
+    if (hud) hud.classList.add('flir-bw');
+    renderer.domElement.style.filter = 'contrast(1.65) brightness(0.92) grayscale(1)';
+  }
+}
+
+function showAC130KillNotification(text) {
+  const el = document.getElementById('ac130-kill-banner');
+  if (!el) return;
+  el.innerText = text;
+  el.style.opacity = '1';
+  el.style.transform = 'translate(-50%, 0) scale(1.08)';
+  if (killBannerTimeout) clearTimeout(killBannerTimeout);
+  killBannerTimeout = setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translate(-50%, -10px) scale(0.96)';
+  }, 2200);
+}
+
+function enterAC130Mode() {
+  initAudio();
+  ac130Active = true;
+  document.getElementById('crosshair').style.display = 'none';
+  document.getElementById('ac130-hud').style.display = 'block';
+  applyFLIRPalette();
+  playAC130Radio();
+  updateHotbar();
+
+  // Orient towards island center
+  const target = new THREE.Vector3(0, 6, 0);
+  const camPos = new THREE.Vector3(
+    Math.cos(ac130OrbitAngle) * ac130OrbitRadius,
+    ac130OrbitHeight,
+    Math.sin(ac130OrbitAngle) * ac130OrbitRadius
+  );
+  const dir = target.clone().sub(camPos).normalize();
+  ac130Yaw = Math.atan2(-dir.x, -dir.z);
+  ac130Pitch = Math.asin(dir.y);
+
+  camera.fov = ac130ZoomLevels[ac130CurrentZoomIdx];
+  camera.updateProjectionMatrix();
+
+  showAC130KillNotification("GHOST-1 AIRBORNE // AIR-TO-GROUND ACTIVE");
+}
+
+function exitAC130Mode() {
+  ac130Active = false;
+  ac130Firing = false;
+  document.getElementById('crosshair').style.display = 'block';
+  document.getElementById('ac130-hud').style.display = 'none';
+  renderer.domElement.style.filter = 'none';
+  camera.fov = 75;
+  camera.updateProjectionMatrix();
+
+  if (activeSlot === 6) activeSlot = 1;
+  updateHotbar();
+  playerInvulnTimer = 2.0; // Grace period on returning to ground
+}
+
+function toggleAC130Mode() {
+  if (ac130Active) {
+    exitAC130Mode();
+  } else {
+    enterAC130Mode();
+  }
+}
+
+function fireAC130Weapon() {
+  if (ac130WeaponCooldown > 0) return;
+  const w = ac130Weapons[currentWeaponIdx];
+  ac130WeaponCooldown = w.cooldown;
+
+  ac130ShotsFired++;
+  if (ac130ShotsFired === 5 && !ac130WeaponTipShown) {
+    ac130WeaponTipShown = true;
+    showAC130WeaponTip();
+  }
+
+  playAC130CannonSound(w.sound);
+  cameraShake = Math.min(cameraShake + w.shake, 1.2);
+
+  const gunshipCamPos = camera.position.clone();
+  // Weapon mounted on aircraft port side
+  const muzzleOffset = new THREE.Vector3(-2.2, -1.0, -1.0).applyQuaternion(camera.quaternion);
+  const origin = gunshipCamPos.clone().add(muzzleOffset);
+
+  // Target point from raycaster
+  const target = ac130TargetPoint ? ac130TargetPoint.clone() : new THREE.Vector3(0, 6, 0);
+
+  // Slight accuracy spread for 25mm / 40mm
+  if (currentWeaponIdx === 2) {
+    target.x += (Math.random() - 0.5) * 0.9;
+    target.z += (Math.random() - 0.5) * 0.9;
+  } else if (currentWeaponIdx === 1) {
+    target.x += (Math.random() - 0.5) * 0.4;
+    target.z += (Math.random() - 0.5) * 0.4;
+  }
+
+  // Visual tracer mesh
+  const tracerMat = new THREE.MeshBasicMaterial({ color: w.tracerColor });
+  const tracerLen = currentWeaponIdx === 0 ? 2.5 : 1.6;
+  const tracerGeo = new THREE.CylinderGeometry(0.08, 0.08, tracerLen, 5);
+  tracerGeo.rotateX(Math.PI / 2);
+  const tracerMesh = new THREE.Mesh(tracerGeo, tracerMat);
+  tracerMesh.position.copy(origin);
+  tracerMesh.lookAt(target);
+  scene.add(tracerMesh);
+
+  const dist = origin.distanceTo(target);
+  const speed = 160;
+  const flightTime = Math.max(0.06, dist / speed);
+
+  ac130Tracers.push({
+    mesh: tracerMesh,
+    origin,
+    target,
+    flightTime,
+    elapsed: 0,
+    weapon: w
+  });
+}
+
+function spawnExplosionMesh(pos, radius) {
+  const geo = new THREE.IcosahedronGeometry(radius * 0.45, 2);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.95
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.copy(pos);
+  scene.add(mesh);
+
+  const duration = 0.32;
+  let elapsed = 0;
+  function updateExpMesh(dt) {
+    elapsed += dt;
+    const p = elapsed / duration;
+    if (p >= 1) {
+      scene.remove(mesh);
+      return false;
+    }
+    const scale = (0.4 + p * 1.6) * radius;
+    mesh.scale.set(scale, scale, scale);
+    if (p < 0.25) {
+      mesh.material.color.setHex(0xffffff);
+    } else if (p < 0.6) {
+      mesh.material.color.setHex(0xff9900);
+    } else {
+      mesh.material.color.setHex(0xcc2200);
+    }
+    mesh.material.opacity = (1 - p) * 0.95;
+    return true;
+  }
+  activeAnimators.push(updateExpMesh);
+}
+
+function spawnShockwave(pos, radius) {
+  const geo = new THREE.RingGeometry(0.2, 0.9, 28);
+  const mat = new THREE.MeshBasicMaterial({
+    color: 0xffeebb,
+    side: THREE.DoubleSide,
+    transparent: true,
+    opacity: 0.85
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(pos.x, pos.y + 0.1, pos.z);
+  scene.add(mesh);
+
+  const duration = 0.38;
+  let elapsed = 0;
+  function updateShockwave(dt) {
+    elapsed += dt;
+    const p = elapsed / duration;
+    if (p >= 1) {
+      scene.remove(mesh);
+      return false;
+    }
+    const scale = (0.2 + p * 3.2) * radius;
+    mesh.scale.set(scale, scale, scale);
+    mesh.material.opacity = (1 - p) * 0.8;
+    return true;
+  }
+  activeAnimators.push(updateShockwave);
+}
+
+function createExplosion(pos, radius, damage, maxBlocks) {
+  playAC130ExplosionSound(radius);
+
+  // Screen shake
+  cameraShake = Math.min(cameraShake + radius * 0.22, 1.4);
+
+  // Fireball & shockwave
+  spawnExplosionMesh(pos, radius);
+  spawnShockwave(pos, radius);
+
+  // Light flash
+  const blastLight = new THREE.PointLight(0xff9933, radius * 3.5, radius * 6);
+  blastLight.position.copy(pos);
+  scene.add(blastLight);
+  setTimeout(() => scene.remove(blastLight), 160);
+
+  // Fire and smoke particles
+  const particleCount = Math.floor(radius * 14);
+  for (let i = 0; i < particleCount; i++) {
+    const pVel = new THREE.Vector3(
+      (Math.random() - 0.5) * radius * 4.2,
+      Math.random() * radius * 3.6 + 2.5,
+      (Math.random() - 0.5) * radius * 4.2
+    );
+    const col = Math.random() > 0.4 ? 0xff4400 : (Math.random() > 0.5 ? 0xffaa00 : 0x333333);
+    spawnParticle(pos, pVel, col, 0.6 + Math.random() * 0.7, 0.22 + Math.random() * 0.2);
+  }
+
+  // Block destruction in crater sphere
+  const rCeil = Math.ceil(radius);
+  const minX = Math.floor(pos.x - rCeil);
+  const maxX = Math.floor(pos.x + rCeil);
+  const minY = Math.floor(pos.y - rCeil);
+  const maxY = Math.floor(pos.y + rCeil);
+  const minZ = Math.floor(pos.z - rCeil);
+  const maxZ = Math.floor(pos.z + rCeil);
+
+  let destroyedCount = 0;
+  for (let x = minX; x <= maxX; x++) {
+    for (let y = minY; y <= maxY; y++) {
+      for (let z = minZ; z <= maxZ; z++) {
+        if (destroyedCount >= maxBlocks) break;
+        const dx = x + 0.5 - pos.x;
+        const dy = y + 0.5 - pos.y;
+        const dz = z + 0.5 - pos.z;
+        const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist <= radius) {
+          const destroyProb = 1.0 - (dist / radius) * 0.35;
+          if (Math.random() < destroyProb) {
+            const k = key(x, y, z);
+            const blockData = world.get(k);
+            if (blockData) {
+              // Block debris particles with corresponding block color
+              let bCol = 0x866043;
+              if (blockData.type === BLOCK_TYPES.GRASS) bCol = 0x5c9634;
+              else if (blockData.type === BLOCK_TYPES.STONE) bCol = 0x828282;
+              else if (blockData.type === BLOCK_TYPES.WOOD) bCol = 0x6d4827;
+              else if (blockData.type === BLOCK_TYPES.LEAVES) bCol = 0x38781e;
+
+              const debVel = new THREE.Vector3(
+                dx * 2.5 + (Math.random() - 0.5) * 4.5,
+                Math.abs(dy) * 2.2 + Math.random() * 5.5 + 2.0,
+                dz * 2.5 + (Math.random() - 0.5) * 4.5
+              );
+              spawnParticle(new THREE.Vector3(x + 0.5, y + 0.5, z + 0.5), debVel, bCol, 0.8 + Math.random() * 0.5, 0.24);
+
+              removeBlock(x, y, z);
+              destroyedCount++;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (destroyedCount > 0) {
+    document.getElementById('block-count').innerText = world.size;
+  }
+
+  // Injure goats in explosion radius
+  const goatBlastRadius = radius * 1.75;
+  for (let i = goats.length - 1; i >= 0; i--) {
+    const goat = goats[i];
+    const dist = goat.pos.distanceTo(pos);
+    if (dist <= goatBlastRadius) {
+      const dmg = Math.max(1, Math.round(damage * (1 - dist / goatBlastRadius)));
+      const knock = goat.pos.clone().sub(pos).normalize();
+      knock.y += 0.7;
+      knock.normalize();
+      const knockForce = Math.min(16, (radius / (dist + 0.6)) * 14);
+      hurtGoat(goat, dmg, knock.multiplyScalar(knockForce));
+    }
+  }
+}
+
+function hurtGoat(goat, dmg, knock) {
+  if (!goat || goat.dead) return;
+  goat.hp -= dmg;
+  goat.hurtTimer = 0.45;
+  if (!ac130Active) {
+    playGoatHurtBleat();
+  }
+
+  if (knock) {
+    goat.vel.x += knock.x;
+    goat.vel.y = Math.max(goat.vel.y + knock.y, 4.5);
+    goat.vel.z += knock.z;
+    goat.onGround = false;
+  }
+
+  // Flash goat red
+  goat.mesh.traverse(child => {
+    if (child.isMesh && child.material) {
+      if (!child.userData.origColor && child.material.color) {
+        child.userData.origColor = child.material.color.clone();
+      }
+      if (child.material.color) {
+        child.material.color.setHex(0xff1111);
+      }
+    }
+  });
+
+  if (goat.hp <= 0) {
+    goat.dead = true;
+    killGoat(goat);
+  }
+}
+
+function killGoat(goat) {
+  // Death burst of wool, meat & smoke particles
+  for (let i = 0; i < 22; i++) {
+    const pVel = new THREE.Vector3(
+      (Math.random() - 0.5) * 6,
+      Math.random() * 5 + 2.5,
+      (Math.random() - 0.5) * 6
+    );
+    const col = Math.random() > 0.5 ? 0xeeece5 : (Math.random() > 0.5 ? 0xaa2222 : 0xff7700);
+    spawnParticle(goat.pos.clone().add(new THREE.Vector3(0, 0.6, 0)), pVel, col, 0.9 + Math.random() * 0.5, 0.26);
+  }
+
+  scene.remove(goat.mesh);
+  const idx = goats.indexOf(goat);
+  if (idx !== -1) goats.splice(idx, 1);
+
+  const countEl = document.getElementById('goat-count');
+  if (countEl) countEl.innerText = goats.length;
+
+  if (ac130Active) {
+    playKillConfirmTone();
+    showAC130KillNotification("TGT ELIMINATED: GOAT NEUTRALIZED");
+  } else {
+    playGoatHurtBleat();
+  }
+
+  // Schedule respawn after 7s so player can keep hunting goats!
+  setTimeout(() => {
+    if (goats.length < 8) {
+      spawnSingleGoat();
+    }
+  }, 7000);
+}
+
+function spawnSingleGoat() {
+  const limit = Math.floor((WORLD_W / 2) - 4);
+  const gx = Math.floor((Math.random() - 0.5) * limit * 2);
+  const gz = Math.floor((Math.random() - 0.5) * limit * 2);
+  let spawnY = 7;
+  for (let y = WORLD_H; y >= 0; y--) {
+    if (world.has(key(gx, y, gz))) {
+      spawnY = y + 1;
+      break;
+    }
+  }
+
+  const model = createGoatModel();
+  scene.add(model);
+
+  goats.push({
+    mesh: model,
+    pos: new THREE.Vector3(gx + 0.5, spawnY + 2, gz + 0.5),
+    vel: new THREE.Vector3(0, 0, 0),
+    yaw: Math.random() * Math.PI * 2,
+    targetYaw: 0,
+    state: 'idle',
+    stateTimer: 2.0,
+    fireCooldown: 4.0 + Math.random() * 4.0,
+    chargeTimer: 0,
+    animTime: Math.random() * 10,
+    onGround: false,
+    hp: 4,
+    maxHp: 4,
+    hurtTimer: 0
+  });
+
+  const countEl = document.getElementById('goat-count');
+  if (countEl) countEl.innerText = goats.length;
+}
+
+function updateAC130Target() {
+  const dir = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+  raycaster.set(camera.position, dir);
+  raycaster.far = 400;
+
+  const targetMeshes = [];
+  world.forEach(v => targetMeshes.push(v.mesh));
+  goats.forEach(g => {
+    g.mesh.traverse(child => { if (child.isMesh) targetMeshes.push(child); });
+  });
+
+  const hits = raycaster.intersectObjects(targetMeshes, false);
+  if (hits.length > 0) {
+    ac130TargetPoint = hits[0].point.clone();
+  } else {
+    // Intersect with plane at y = 1 (sea/island base level)
+    if (Math.abs(dir.y) > 0.001) {
+      const t = (1 - camera.position.y) / dir.y;
+      if (t > 0) {
+        ac130TargetPoint = camera.position.clone().addScaledVector(dir, t);
+      }
+    }
+  }
+}
+
+function updateAC130(dt) {
+  // Orbit around world center
+  ac130OrbitAngle += 0.08 * dt;
+  const gunshipX = Math.cos(ac130OrbitAngle) * ac130OrbitRadius;
+  const gunshipZ = Math.sin(ac130OrbitAngle) * ac130OrbitRadius;
+
+  camera.position.set(gunshipX, ac130OrbitHeight, gunshipZ);
+
+  camera.rotation.order = 'YXZ';
+  camera.rotation.y = ac130Yaw;
+  camera.rotation.x = ac130Pitch;
+
+  // Screen shake
+  if (cameraShake > 0) {
+    cameraShake = Math.max(0, cameraShake - dt * 2.8);
+    camera.position.x += (Math.random() - 0.5) * cameraShake * 0.35;
+    camera.position.y += (Math.random() - 0.5) * cameraShake * 0.35;
+    camera.position.z += (Math.random() - 0.5) * cameraShake * 0.35;
+  }
+
+  // Weapon cooldown and continuous auto-firing
+  if (ac130WeaponCooldown > 0) {
+    ac130WeaponCooldown -= dt;
+  }
+  const w = ac130Weapons[currentWeaponIdx];
+  if (ac130Firing && w.auto && ac130WeaponCooldown <= 0) {
+    fireAC130Weapon();
+  }
+
+  updateAC130Target();
+  updateAC130HUD();
+}
+
+function updateAC130HUD() {
+  if (!ac130Active) return;
+
+  const azDeg = Math.round(((-ac130Yaw * 180 / Math.PI) % 360 + 360) % 360);
+  const elDeg = Math.round(ac130Pitch * 180 / Math.PI);
+  const azEl = document.getElementById('ac130-az');
+  if (azEl) azEl.innerText = `AZ: ${azDeg.toString().padStart(3, '0')}°`;
+  const elEl = document.getElementById('ac130-el');
+  if (elEl) elEl.innerText = `EL: ${elDeg}°`;
+
+  if (ac130TargetPoint) {
+    const rng = Math.round(camera.position.distanceTo(ac130TargetPoint) * 3.28);
+    const rngEl = document.getElementById('ac130-rng');
+    if (rngEl) rngEl.innerText = `RNG: ${rng} FT`;
+  }
+
+  const w = ac130Weapons[currentWeaponIdx];
+  const wpnNameEl = document.getElementById('ac130-weapon-name');
+  if (wpnNameEl) wpnNameEl.innerText = w.short;
+
+  const reloadPct = w.cooldown > 0
+    ? Math.max(0, Math.min(100, Math.round((1 - Math.max(0, ac130WeaponCooldown) / w.cooldown) * 100)))
+    : 100;
+  const barEl = document.getElementById('ac130-reload-bar');
+  if (barEl) barEl.style.width = reloadPct + '%';
+  const textEl = document.getElementById('ac130-reload-text');
+  if (textEl) textEl.innerText = reloadPct >= 100 ? 'READY' : `RELOAD ${reloadPct}%`;
+
+  // Update live goat targeting brackets
+  const tgtContainer = document.getElementById('ac130-targets');
+  if (!tgtContainer) return;
+  tgtContainer.innerHTML = '';
+
+  const wWidth = window.innerWidth;
+  const wHeight = window.innerHeight;
+  const tempVec = new THREE.Vector3();
+
+  goats.forEach((goat, idx) => {
+    if (goat.dead) return;
+    tempVec.copy(goat.pos).add(new THREE.Vector3(0, 0.7, 0));
+    tempVec.project(camera);
+
+    if (tempVec.z > -1 && tempVec.z < 1) {
+      const sx = (tempVec.x * 0.5 + 0.5) * wWidth;
+      const sy = (-(tempVec.y * 0.5) + 0.5) * wHeight;
+
+      if (sx > 20 && sx < wWidth - 20 && sy > 20 && sy < wHeight - 20) {
+        const box = document.createElement('div');
+        box.className = 'ac130-target-box';
+        box.style.left = `${sx}px`;
+        box.style.top = `${sy}px`;
+        box.innerHTML = `
+          <div class="bracket top-left"></div>
+          <div class="bracket top-right"></div>
+          <div class="bracket bottom-left"></div>
+          <div class="bracket bottom-right"></div>
+          <div class="tgt-info">GOAT-${idx + 1} [HP:${goat.hp}/${goat.maxHp}]</div>
+        `;
+        tgtContainer.appendChild(box);
+      }
+    }
+  });
+}
+
+// Hook up HUD button clicks
+setTimeout(() => {
+  for (let i = 0; i < 3; i++) {
+    const btn = document.getElementById(`wpn-btn-${i}`);
+    if (btn) {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        selectAC130Weapon(i);
+      });
+    }
+  }
+  const zoomBtn = document.getElementById('ac130-zoom-btn');
+  if (zoomBtn) zoomBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleAC130Zoom(); });
+  const flirBtn = document.getElementById('ac130-flir-btn');
+  if (flirBtn) flirBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleFLIRPalette(); });
+  const exitBtn = document.getElementById('ac130-exit-btn');
+  if (exitBtn) exitBtn.addEventListener('click', (e) => { e.stopPropagation(); exitAC130Mode(); });
+}, 100);
 
 // --- NPC GOATS ---
 const goats = [];
@@ -941,11 +2088,14 @@ function createGoatModel() {
 
 function spawnGoats() {
   const spawnCoords = [
-    [-6, -6],
-    [7, -5],
-    [-7, 7],
-    [6, 6],
-    [0, 8]
+    [-9, -9],
+    [10, -8],
+    [-8, 10],
+    [9, 9],
+    [0, 11],
+    [-11, 0],
+    [11, 1],
+    [1, -11]
   ];
 
   spawnCoords.forEach(([gx, gz]) => {
@@ -972,7 +2122,10 @@ function spawnGoats() {
       fireCooldown: 3.0 + Math.random() * 5.0,
       chargeTimer: 0,
       animTime: Math.random() * 10,
-      onGround: true
+      onGround: true,
+      hp: 4,
+      maxHp: 4,
+      hurtTimer: 0
     });
   });
 
@@ -985,6 +2138,19 @@ spawnGoats();
 function updateGoats(dt) {
   goats.forEach(goat => {
     goat.animTime += dt;
+
+    // Hurt timer & color recovery
+    if (goat.hurtTimer > 0) {
+      goat.hurtTimer -= dt;
+      if (goat.hurtTimer <= 0) {
+        goat.mesh.traverse(child => {
+          if (child.isMesh && child.userData.origColor && child.material && child.material.color) {
+            child.material.color.copy(child.userData.origColor);
+          }
+        });
+      }
+    }
+
     const distToPlayer = goat.pos.distanceTo(player.pos);
 
     // AI State logic
@@ -1076,27 +2242,33 @@ function updateGoats(dt) {
 
     // Movement & Walk animation
     let isWalking = false;
-    if (goat.state === 'walk') {
-      isWalking = true;
-      const walkSpeed = 2.2;
-      const forward = new THREE.Vector3(Math.sin(goat.yaw), 0, Math.cos(goat.yaw));
-      goat.vel.x = forward.x * walkSpeed;
-      goat.vel.z = forward.z * walkSpeed;
+    if (goat.onGround) {
+      if (goat.state === 'walk') {
+        isWalking = true;
+        const walkSpeed = 2.2;
+        const forward = new THREE.Vector3(Math.sin(goat.yaw), 0, Math.cos(goat.yaw));
+        goat.vel.x = forward.x * walkSpeed;
+        goat.vel.z = forward.z * walkSpeed;
 
-      // Obstacle jump check: if block right in front at foot level, jump!
-      const checkX = goat.pos.x + forward.x * 0.7;
-      const checkZ = goat.pos.z + forward.z * 0.7;
-      const footY = Math.floor(goat.pos.y);
-      const headY = footY + 1;
-      if (world.has(key(Math.floor(checkX), footY, Math.floor(checkZ))) &&
-          !world.has(key(Math.floor(checkX), headY, Math.floor(checkZ))) &&
-          goat.onGround) {
-        goat.vel.y = 6.8; // Goat leap!
-        goat.onGround = false;
+        // Obstacle jump check: if block right in front at foot level, jump!
+        const checkX = goat.pos.x + forward.x * 0.7;
+        const checkZ = goat.pos.z + forward.z * 0.7;
+        const footY = Math.floor(goat.pos.y);
+        const headY = footY + 1;
+        if (world.has(key(Math.floor(checkX), footY, Math.floor(checkZ))) &&
+            !world.has(key(Math.floor(checkX), headY, Math.floor(checkZ))) &&
+            goat.onGround) {
+          goat.vel.y = 6.8; // Goat leap!
+          goat.onGround = false;
+        }
+      } else {
+        goat.vel.x = 0;
+        goat.vel.z = 0;
       }
     } else {
-      goat.vel.x = 0;
-      goat.vel.z = 0;
+      // In air (e.g. from explosion impulse), preserve horizontal momentum with air drag
+      goat.vel.x *= Math.pow(0.92, dt * 60);
+      goat.vel.z *= Math.pow(0.92, dt * 60);
     }
 
     // Animate legs and head
@@ -1267,79 +2439,109 @@ function animate() {
       playerInvulnTimer -= dt;
     }
 
+    if (!ac130Active) {
+      // Controls
+      const speed = keys['ShiftLeft'] || keys['ShiftRight'] ? 4.5 : 7.0;
+      const moveDir = new THREE.Vector3();
+
+      if (keys['KeyW']) moveDir.z -= 1;
+      if (keys['KeyS']) moveDir.z += 1;
+      if (keys['KeyA']) moveDir.x -= 1;
+      if (keys['KeyD']) moveDir.x += 1;
+      moveDir.normalize();
+
+      // Rotate move direction with yaw
+      const forward = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
+      const right = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
+      const moveVel = new THREE.Vector3()
+        .addScaledVector(forward, -moveDir.z)
+        .addScaledVector(right, moveDir.x)
+        .multiplyScalar(speed);
+
+      // Gravity & Jump
+      player.vel.y -= 22 * dt;
+      if (keys['Space'] && player.onGround) {
+        player.vel.y = 8.5;
+        player.onGround = false;
+      }
+
+      // Step X
+      const newPosX = player.pos.clone();
+      newPosX.x += moveVel.x * dt;
+      if (!checkCollision(newPosX)) {
+        player.pos.x = newPosX.x;
+      }
+
+      // Step Z
+      const newPosZ = player.pos.clone();
+      newPosZ.z += moveVel.z * dt;
+      if (!checkCollision(newPosZ)) {
+        player.pos.z = newPosZ.z;
+      }
+
+      // Step Y
+      const newPosY = player.pos.clone();
+      newPosY.y += player.vel.y * dt;
+      if (!checkCollision(newPosY)) {
+        player.pos.y = newPosY.y;
+        player.onGround = false;
+      } else {
+        if (player.vel.y < 0) {
+          player.onGround = true;
+        }
+        player.vel.y = 0;
+      }
+
+      // Void reset
+      if (player.pos.y < -15) {
+        player.pos.set(0, 15, 0);
+        player.vel.set(0, 0, 0);
+      }
+    } else {
+      updateAC130(dt);
+    }
+
     updateGoats(dt);
     updateProjectilesAndParticles(dt);
 
-    // Controls
-    const speed = keys['ShiftLeft'] || keys['ShiftRight'] ? 4.5 : 7.0;
-    const moveDir = new THREE.Vector3();
-
-    if (keys['KeyW']) moveDir.z -= 1;
-    if (keys['KeyS']) moveDir.z += 1;
-    if (keys['KeyA']) moveDir.x -= 1;
-    if (keys['KeyD']) moveDir.x += 1;
-    moveDir.normalize();
-
-    // Rotate move direction with yaw
-    const forward = new THREE.Vector3(-Math.sin(player.yaw), 0, -Math.cos(player.yaw));
-    const right = new THREE.Vector3(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
-    const moveVel = new THREE.Vector3()
-      .addScaledVector(forward, -moveDir.z)
-      .addScaledVector(right, moveDir.x)
-      .multiplyScalar(speed);
-
-    // Gravity & Jump
-    player.vel.y -= 22 * dt;
-    if (keys['Space'] && player.onGround) {
-      player.vel.y = 8.5;
-      player.onGround = false;
-    }
-
-    // Step X
-    const newPosX = player.pos.clone();
-    newPosX.x += moveVel.x * dt;
-    if (!checkCollision(newPosX)) {
-      player.pos.x = newPosX.x;
-    }
-
-    // Step Z
-    const newPosZ = player.pos.clone();
-    newPosZ.z += moveVel.z * dt;
-    if (!checkCollision(newPosZ)) {
-      player.pos.z = newPosZ.z;
-    }
-
-    // Step Y
-    const newPosY = player.pos.clone();
-    newPosY.y += player.vel.y * dt;
-    if (!checkCollision(newPosY)) {
-      player.pos.y = newPosY.y;
-      player.onGround = false;
-    } else {
-      if (player.vel.y < 0) {
-        player.onGround = true;
+    // Update AC-130 Tracers
+    for (let i = ac130Tracers.length - 1; i >= 0; i--) {
+      const tr = ac130Tracers[i];
+      tr.elapsed += dt;
+      const progress = tr.elapsed / tr.flightTime;
+      if (progress >= 1.0) {
+        createExplosion(tr.target, tr.weapon.blastRadius, tr.weapon.damage, tr.weapon.maxBlocks);
+        scene.remove(tr.mesh);
+        ac130Tracers.splice(i, 1);
+      } else {
+        tr.mesh.position.lerpVectors(tr.origin, tr.target, progress);
       }
-      player.vel.y = 0;
     }
 
-    // Void reset
-    if (player.pos.y < -15) {
-      player.pos.set(0, 15, 0);
-      player.vel.set(0, 0, 0);
+    // Update active visual animators (fireball, shockwave)
+    for (let i = activeAnimators.length - 1; i >= 0; i--) {
+      if (!activeAnimators[i](dt)) {
+        activeAnimators.splice(i, 1);
+      }
     }
   }
 
-  // Camera update
-  camera.position.set(player.pos.x, player.pos.y, player.pos.z);
-  camera.rotation.order = 'YXZ';
-  camera.rotation.y = player.yaw;
-  camera.rotation.x = player.pitch;
+  if (!ac130Active) {
+    // Camera update
+    camera.position.set(player.pos.x, player.pos.y, player.pos.z);
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = player.yaw;
+    camera.rotation.x = player.pitch;
 
-  updateRaycast();
+    updateRaycast();
 
-  // Position UI
-  document.getElementById('pos-info').innerText = 
-    `X: ${Math.floor(player.pos.x)}, Y: ${Math.floor(player.pos.y)}, Z: ${Math.floor(player.pos.z)}`;
+    // Position UI
+    document.getElementById('pos-info').innerText = 
+      `X: ${Math.floor(player.pos.x)}, Y: ${Math.floor(player.pos.y)}, Z: ${Math.floor(player.pos.z)}`;
+  } else {
+    document.getElementById('pos-info').innerText = 
+      `AC-130 ALT: ${Math.floor(camera.position.y * 100)} FT`;
+  }
 
   renderer.render(scene, camera);
 }
