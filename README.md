@@ -12,7 +12,8 @@ Pure AI slop, sorry.
 1. lovely, thank you
 1. can you make this publishable on github pages please.
 1. i'm losing lives while i'm on the start screen, the goats are killing the player
+1. add a tool to the tool-belt to activate AC-130 mode
 
 ---
 
-[@ryanspain](https://github.com/ryanspain) up next
+[@cathalnoonan](https://github.com/cathalnoonan) up next
