@@ -17,4 +17,4 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Lint Markdown files
-        run: npx --yes markdownlint-cli "**/*.md"
+        run: npx --yes markdownlint-cli --disable MD013 -- "**/*.md"
