@@ -1,0 +1,21 @@
+name: Lint YAML
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - '**.yml'
+      - '**.yaml'
+
+jobs:
+  lint:
+    name: Lint YAML
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Lint YAML files
+        run: |
+          yamllint -d "{extends: default, rules: {document-start: disable, line-length: disable, truthy: {check-keys: false}}}" .

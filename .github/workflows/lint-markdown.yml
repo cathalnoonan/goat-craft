@@ -1,0 +1,20 @@
+name: Lint Markdown
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - '.github/workflows/lint-markdown.yml'
+      - '**.md'
+
+jobs:
+  lint:
+    name: Lint Markdown
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Lint Markdown files
+        run: npx --yes markdownlint-cli --disable MD013 -- "**/*.md"
