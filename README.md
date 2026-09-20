@@ -4,16 +4,32 @@ Pure AI slop, sorry.
 
 ---
 
-## Prompts used
+## Local Development Guide
 
-1. You have 380 seconds. Make a standalone html page with just css and js that renders a playable minecraft came. single file only. public/index.html. not else. read nothing. one shot.
-1. Please add NPC goats to the game. they should spit fire.
-1. Uncaught SyntaxError: missing } after function body game.html:1241:1note: { opened at line 1072, column 44.
-1. lovely, thank you
-1. can you make this publishable on github pages please.
-1. i'm losing lives while i'm on the start screen, the goats are killing the player
-1. add a tool to the tool-belt to activate AC-130 mode
+This guide explains how to run the project locally using Docker compose and Nginx. This setup does not require any IDE-specific extensions (like VS Code Live Server) and ensures consistency across different development environments.
+
+## Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) installed and running on your machine.
 
 ---
 
-[@cathalnoonan](https://github.com/cathalnoonan) up next
+## Start the server
+
+```bash
+docker compose up -d
+```
+
+## Stop the server
+
+```bash
+docker compose down
+```
+
+---
+
+## Accessing the Game
+
+Once the container is running, open your web browser and navigate to: <http://localhost:8080>.
+
+Any changes made to files in `public/` (such as `index.html`) are mounted live and will appear upon refreshing the browser.
